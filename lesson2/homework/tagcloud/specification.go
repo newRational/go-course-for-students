@@ -2,6 +2,13 @@ package tagcloud
 
 // TagCloud aggregates statistics about used tags
 type TagCloud struct {
+
+	// 1. Первое поле - tagNames map[string]*TagStat
+	tagNames map[string]*TagStat
+
+	// 2. Второе поле - tagStats []*TagStat
+	tagStats []*TagStat
+
 	// TODO: add fields if necessary
 }
 
@@ -22,6 +29,12 @@ func New() TagCloud {
 // thread-safety is not needed
 // TODO: You decide whether receiver should be a pointer or a value
 func (TagCloud) AddTag(tag string) {
+	// 1. 	Ищется тег в tagNames
+	// 1a.	Тег есть в tagNames - идет переход на соответствующий элемент в tagStats
+	// 1b.	Тега нет в tagNames - Добавляется новый тег в tagNames, затем идет
+	// 		переход на соответствующий элемент в tagStats
+	// 2.	В элементе в tagStats увеличивается на 1 OccurrenceCount
+	// 3.	Производится "всплывание" данного элемента
 	// TODO: Implement this
 }
 
@@ -32,6 +45,7 @@ func (TagCloud) AddTag(tag string) {
 // there are no restrictions on time complexity
 // TODO: You decide whether receiver should be a pointer or a value
 func (TagCloud) TopN(n int) []TagStat {
+	// Так как tagStats типа slice, то просто возвращаем slice из первых N элементов
 	// TODO: Implement this
 	return nil
 }
