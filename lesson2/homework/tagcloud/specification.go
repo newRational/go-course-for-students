@@ -1,15 +1,8 @@
 package tagcloud
 
-// TagCloud aggregates statistics about used tags
 type TagCloud struct {
-
-	// 1. Первое поле - tagNames map[string]*TagStat
-	tagNames map[string]*TagStat
-
-	// 2. Второе поле - tagStats []*TagStat
-	tagStats []*TagStat
-
-	// TODO: add fields if necessary
+	tags  map[string]int
+	stats []TagStat
 }
 
 // TagStat represents statistics regarding single tag
@@ -18,24 +11,60 @@ type TagStat struct {
 	OccurrenceCount int
 }
 
+func NewTagStat(tag string) TagStat {
+	return TagStat{Tag: tag, OccurrenceCount: 1}
+}
+
 // New should create a valid TagCloud instance
 // TODO: You decide whether this function should return a pointer or a value
-func New() TagCloud {
-	// TODO: Implement this
-	return TagCloud{}
+func New() *TagCloud {
+	return &TagCloud{
+		tags:  map[string]int{},
+		stats: []TagStat{},
+	}
 }
 
 // AddTag should add a tag to the cloud if it wasn't present and increase tag occurrence count
 // thread-safety is not needed
 // TODO: You decide whether receiver should be a pointer or a value
-func (TagCloud) AddTag(tag string) {
-	// 1. 	Ищется тег в tagNames
-	// 1a.	Тег есть в tagNames - идет переход на соответствующий элемент в tagStats
-	// 1b.	Тега нет в tagNames - Добавляется новый тег в tagNames, затем идет
-	// 		переход на соответствующий элемент в tagStats
-	// 2.	В элементе в tagStats увеличивается на 1 OccurrenceCount
-	// 3.	Производится "всплывание" данного элемента
-	// TODO: Implement this
+func (t *TagCloud) AddTag(tag string) {
+	tsInd, ok := t.tags[tag]
+	if ok {
+		t.updateTag(tsInd)
+	} else {
+		t.addNewTag(tag)
+	}
+}
+func (t *TagCloud) addNewTag(tag string) {
+	tsInd := len(t.stats)
+
+	t.tags[tag] = tsInd
+
+	t.stats = append(t.stats, NewTagStat(tag))
+}
+
+func (t *TagCloud) updateTag(tsInd int) {
+	t.stats[tsInd].OccurrenceCount++
+
+	newInd := tsInd - 1
+	for t.validIndex(newInd) && t.occurrenceCountLess(newInd, tsInd) {
+		newInd--
+	}
+	t.swap(tsInd, newInd+1)
+}
+
+func (t *TagCloud) swap(ind1, ind2 int) {
+	t.stats[ind1], t.stats[ind2] = t.stats[ind2], t.stats[ind1]
+	t.tags[t.tag(ind1)], t.tags[t.tag(ind2)] = t.tags[t.tag(ind2)], t.tags[t.tag(ind1)]
+}
+func (t *TagCloud) tag(ind int) string {
+	return t.stats[ind].Tag
+}
+func (t *TagCloud) validIndex(ind int) bool {
+	return -1 < ind && ind < len(t.stats)
+}
+func (t *TagCloud) occurrenceCountLess(ind1, ind2 int) bool {
+	return t.stats[ind1].OccurrenceCount < t.stats[ind2].OccurrenceCount
 }
 
 // TopN should return top N most frequent tags ordered in descending order by occurrence count
@@ -44,8 +73,10 @@ func (TagCloud) AddTag(tag string) {
 // thread-safety is not needed
 // there are no restrictions on time complexity
 // TODO: You decide whether receiver should be a pointer or a value
-func (TagCloud) TopN(n int) []TagStat {
-	// Так как tagStats типа slice, то просто возвращаем slice из первых N элементов
-	// TODO: Implement this
-	return nil
+func (t *TagCloud) TopN(n int) []TagStat {
+	if n > len(t.stats) {
+		return t.stats[:]
+	} else {
+		return t.stats[:n]
+	}
 }

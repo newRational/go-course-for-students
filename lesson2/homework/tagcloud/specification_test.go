@@ -39,7 +39,7 @@ func TestHappyPath(t *testing.T) {
 
 func TestTopN(t *testing.T) {
 	tc := tagcloud.New()
-	size := 1000
+	size := 1000 // должна быть 1000
 	for i := 0; i < size; i++ {
 		for j := 0; j < i; j++ {
 			tc.AddTag(fmt.Sprintf("%d", i))
