@@ -39,7 +39,7 @@ func TestHappyPath(t *testing.T) {
 
 func TestTopN(t *testing.T) {
 	tc := tagcloud.New()
-	size := 1000 // должна быть 1000
+	size := 1000
 	for i := 0; i < size; i++ {
 		for j := 0; j < i; j++ {
 			tc.AddTag(fmt.Sprintf("%d", i))
@@ -53,7 +53,7 @@ func TestTopN(t *testing.T) {
 		for i, el := range topN {
 			value := size - i - 1
 			tagName := fmt.Sprintf("%d", value)
-			assert.Equal(t, tagName, el.Tag, "TopN(%d) returned elements in wrong order (bad tag tag at %d): %v", n, i, topN)
+			assert.Equal(t, tagName, el.Tag, "TopN(%d) returned elements in wrong order (bad tag name at %d): %v", n, i, topN)
 			assert.Equal(t, value, el.OccurrenceCount, "TopN(%d) returned elements in wrong order (bad occurrence count at %d): %v", n, i, topN)
 		}
 	}
