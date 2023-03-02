@@ -19,7 +19,8 @@ type TagStat struct {
 	OccurrenceCount int
 }
 
-func NewTagStat(tag string) TagStat {
+// newTagStat should create a valid TagStat instance
+func newTagStat(tag string) TagStat {
 	return TagStat{Tag: tag, OccurrenceCount: 1}
 }
 
@@ -43,11 +44,16 @@ func (t *TagCloud) AddTag(tag string) {
 		t.addNewTag(tag)
 	}
 }
+
+// addNewTag adds new TagStat element to the end of the stats
+// and adds the appropriate index to the tags
 func (t *TagCloud) addNewTag(tag string) {
 	t.tags[tag] = len(t.stats)
-	t.stats = append(t.stats, NewTagStat(tag))
+	t.stats = append(t.stats, newTagStat(tag))
 }
 
+// updateTag increases OccurrenceCount and swaps
+// two elements in stats to maintain frequency order
 func (t *TagCloud) updateTag(ind int) {
 	t.stats[ind].OccurrenceCount++
 	f := t.stats[ind].OccurrenceCount
@@ -55,6 +61,8 @@ func (t *TagCloud) updateTag(ind int) {
 	t.frequencies[f]++
 }
 
+// swap swaps two elements in stats by indexes
+// and swaps indexes of the elements in tags
 func (t *TagCloud) swap(ind1, ind2 int) {
 	t.stats[ind1], t.stats[ind2] = t.stats[ind2], t.stats[ind1]
 	t.tags[t.tag(ind1)], t.tags[t.tag(ind2)] = t.tags[t.tag(ind2)], t.tags[t.tag(ind1)]
