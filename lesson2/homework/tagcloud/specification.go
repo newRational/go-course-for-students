@@ -20,8 +20,8 @@ type TagStat struct {
 }
 
 // newTagStat should create a valid TagStat instance
-func newTagStat(tag string) TagStat {
-	return TagStat{Tag: tag, OccurrenceCount: 1}
+func newTagStat(tag string) *TagStat {
+	return &TagStat{Tag: tag, OccurrenceCount: 1}
 }
 
 // New should create a valid TagCloud instance
@@ -49,7 +49,7 @@ func (t *TagCloud) AddTag(tag string) {
 // and adds the appropriate index to the tags
 func (t *TagCloud) addNewTag(tag string) {
 	t.tags[tag] = len(t.stats)
-	t.stats = append(t.stats, newTagStat(tag))
+	t.stats = append(t.stats, *newTagStat(tag))
 }
 
 // updateTag increases OccurrenceCount and swaps
