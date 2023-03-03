@@ -7,10 +7,10 @@ type TagCloud struct {
 
 	// tags отображает Tag на индекс, по которому расположен
 	// элемент типа TagStat с данным Tag
-	tags map[string]int
+	tags        map[string]int
 
 	// stats - непосредственное хранилище элементов типа TagStat
-	stats []TagStat
+	stats       []TagStat
 }
 
 // TagStat represents statistics regarding single tag
