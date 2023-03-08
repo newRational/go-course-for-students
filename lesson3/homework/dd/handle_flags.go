@@ -25,8 +25,8 @@ func DefineFlags(opts *Options) {
 }
 
 func ValidateFlags(opts *Options) (report []error) {
-	report = appendIfNotNil(report, validateInputFile(opts.From))
-	report = appendIfNotNil(report, validateOutputFile(opts.To))
+	report = appendIfErr(report, validateInputFile(opts.From))
+	report = appendIfErr(report, validateOutputFile(opts.To))
 
 	return
 }
@@ -57,7 +57,7 @@ func validateOutputFile(path string) error {
 	return e.Wrap("invalid output file", err)
 }
 
-func appendIfNotNil(errors []error, err error) []error {
+func appendIfErr(errors []error, err error) []error {
 	if err != nil {
 		return append(errors, err)
 	}
