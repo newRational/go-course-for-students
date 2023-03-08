@@ -1,16 +1,9 @@
 package tagcloud
 
 type TagCloud struct {
-	// frequencies отображает OccurrenceCount на индекс, на который нужно
-	// переместить элемент типа TagStat c данным OccurrenceCount
 	frequencies map[int]int
-
-	// tags отображает Tag на индекс, по которому расположен
-	// элемент типа TagStat с данным Tag
-	tags map[string]int
-
-	// stats - непосредственное хранилище элементов типа TagStat
-	stats []TagStat
+	tags        map[string]int
+	stats       []TagStat
 }
 
 // TagStat represents statistics regarding single tag
