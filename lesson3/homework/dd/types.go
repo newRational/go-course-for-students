@@ -1,13 +1,5 @@
 package dd
 
-// ConvTypes
-const (
-	Default = iota
-	UpperCase
-	LowerCase
-	TrimSpaces
-)
-
 type Options struct {
 	From      string
 	To        string
@@ -16,3 +8,21 @@ type Options struct {
 	BlockSize int
 	ConvType  int
 }
+
+// Default Options values
+const (
+	DefaultFrom      = "stdin"
+	DefaultTo        = "stdout"
+	DefaultOffset    = 0
+	DefaultLimit     = -1
+	DefaultBlockSize = 2
+	DefaultConvType  = ChangeNothing
+)
+
+// ConvTypes
+const (
+	ChangeNothing = iota
+	UpperCase
+	LowerCase
+	TrimSpaces
+)
