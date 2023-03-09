@@ -37,8 +37,8 @@ func DefineFlags(opts *Options) {
 func ValidateFlags(opts *Options) (report []error) {
 	report = appendIfErr(report, validateInputFile(opts.From))
 	report = appendIfErr(report, validateOutputFile(opts.To))
-	report = appendIfErr(report, validateLimit(opts.Limit))
 	report = appendIfErr(report, validateOffset(opts.From, opts.Offset))
+	report = appendIfErr(report, validateLimit(opts.Limit))
 	report = appendIfErr(report, validateBlockSize(opts.BlockSize))
 	report = appendIfErr(report, validateConv(opts.Conv))
 	return
@@ -50,14 +50,14 @@ func validateFile(path string) error {
 }
 
 func validateInputFile(path string) error {
-	if path == "stdin" {
+	if path == DefaultFrom {
 		return nil
 	}
 	return validateFile(path)
 }
 
 func validateOutputFile(path string) error {
-	if path == "stdout" {
+	if path == DefaultTo {
 		return nil
 	}
 	return validateFile(path)
@@ -78,7 +78,7 @@ func validateOffset(path string, offset int) error {
 }
 
 func validateLimit(limit int) error {
-	if limit < 0 {
+	if limit < 0 && limit != DefaultLimit {
 		return errors.New("negative limit")
 	}
 
