@@ -36,7 +36,7 @@ func writerCloser(to string) io.WriteCloser {
 
 func process(rs io.ReadSeeker, w io.Writer, opts *Options) {
 	if isStdin(rs) {
-		skipToOffset(rs, opts)
+		skipOffset(rs, opts)
 	} else {
 		seekFromStart(rs, opts.Offset)
 	}
@@ -55,7 +55,7 @@ func startCopy(rs io.ReadSeeker, w io.Writer, opts *Options) {
 	block := make([]byte, opts.BlockSize)
 
 	for {
-		readBytesCount, _ := rs.Read(block)
+		readBytesCount := readBlock(rs, block)
 		if readBytesCount == 0 {
 			break
 		}
@@ -64,27 +64,34 @@ func startCopy(rs io.ReadSeeker, w io.Writer, opts *Options) {
 		}
 
 		block = convertBlock(block, opts.Conv)
+
 		writeBlock(w, block)
 	}
+
 }
 
-func skipToOffset(rs io.ReadSeeker, opts *Options) {
+func skipOffset(rs io.ReadSeeker, opts *Options) {
 	block := make([]byte, opts.BlockSize)
 
-	diff := opts.Offset
+	remainingBytesCount := opts.Offset
 
-	for diff > opts.BlockSize {
-		readBytesCount, _ := rs.Read(block)
-
-		if readBytesCount < opts.BlockSize {
-			fmt.Fprintln(os.Stderr, "offset is greater than input data size")
+	for remainingBytesCount > opts.BlockSize {
+		readBytesCount := readBlock(rs, block)
+		if !noMoreBytes(readBytesCount, opts.BlockSize) {
 			return
 		}
-
-		diff -= readBytesCount
+		remainingBytesCount -= readBytesCount
 	}
 
-	rs.Read(make([]byte, 0, diff))
+	readBlock(rs, make([]byte, remainingBytesCount))
+}
+
+func noMoreBytes(readBytesCount, blockSize int) bool {
+	if readBytesCount < blockSize {
+		fmt.Fprintln(os.Stderr, "offset is greater than input data size")
+		return false
+	}
+	return true
 }
 
 func seekFromStart(rs io.Seeker, offset int) {
@@ -92,6 +99,14 @@ func seekFromStart(rs io.Seeker, offset int) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
+}
+
+func readBlock(r io.Reader, block []byte) int {
+	readBytesCount, err := r.Read(block)
+	if err != nil && err != io.EOF {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	return readBytesCount
 }
 
 func writeBlock(w io.Writer, block []byte) {
