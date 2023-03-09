@@ -15,7 +15,7 @@ const (
 	Stdout           = "stdout"
 	DefaultOffset    = 0
 	DefaultLimit     = NoLimit
-	DefaultBlockSize = 1
+	DefaultBlockSize = 100
 	DefaultConvType  = ChangeNothing
 )
 

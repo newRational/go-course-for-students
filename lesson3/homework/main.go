@@ -15,6 +15,5 @@ func main() {
 
 	fmt.Println(opts)
 
-	dd.ReadFileWithChunk(opts)
-	// todo: implement the functional requirements described in read.me
+	dd.Start(opts)
 }
