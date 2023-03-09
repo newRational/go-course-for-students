@@ -77,7 +77,7 @@ func skipOffset(rs io.ReadSeeker, opts *Options) {
 
 	for remainingBytesCount > opts.BlockSize {
 		readBytesCount := readBlock(rs, block)
-		if !noMoreBytes(readBytesCount, opts.BlockSize) {
+		if noMoreBytes(readBytesCount, opts.BlockSize) {
 			return
 		}
 		remainingBytesCount -= readBytesCount
@@ -89,9 +89,9 @@ func skipOffset(rs io.ReadSeeker, opts *Options) {
 func noMoreBytes(readBytesCount, blockSize int) bool {
 	if readBytesCount < blockSize {
 		fmt.Fprintln(os.Stderr, "offset is greater than input data size")
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
 func seekFromStart(rs io.Seeker, offset int) {
