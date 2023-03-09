@@ -36,10 +36,11 @@ func writerCloser(to string) io.WriteCloser {
 
 func process(rs io.ReadSeeker, w io.Writer, opts *Options) {
 	if isStdin(rs) {
-		processFromStdin(rs, w, opts)
+		skipToOffset(rs, opts)
 	} else {
-		processFromFile(rs, w, opts)
+		seekFromStart(rs, opts.Offset)
 	}
+	startCopy(rs, w, opts)
 }
 
 func isStdin(rs io.ReadSeeker) bool {
@@ -50,29 +51,8 @@ func isStdin(rs io.ReadSeeker) bool {
 	return true
 }
 
-func processFromStdin(rs io.ReadSeeker, w io.Writer, opts *Options) {
+func startCopy(rs io.ReadSeeker, w io.Writer, opts *Options) {
 	block := make([]byte, opts.BlockSize)
-
-	skipToOffset(rs, opts)
-
-	for {
-		readBytesCount, _ := rs.Read(block)
-		if readBytesCount == 0 {
-			break
-		}
-		if readBytesCount < opts.BlockSize {
-			block = block[:readBytesCount]
-		}
-
-		block = convertBlock(block, opts.Conv)
-		writeBlock(w, block)
-	}
-}
-
-func processFromFile(rs io.ReadSeeker, w io.Writer, opts *Options) {
-	block := make([]byte, opts.BlockSize)
-
-	seekFromStart(rs, opts.Offset)
 
 	for {
 		readBytesCount, _ := rs.Read(block)
