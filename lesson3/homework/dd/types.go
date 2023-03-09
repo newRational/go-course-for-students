@@ -11,13 +11,15 @@ type Options struct {
 
 // Default Options values
 const (
-	DefaultFrom      = "stdin"
-	DefaultTo        = "stdout"
+	Stdin            = "stdin"
+	Stdout           = "stdout"
 	DefaultOffset    = 0
-	DefaultLimit     = -1
-	DefaultBlockSize = 2
+	DefaultLimit     = NoLimit
+	DefaultBlockSize = 1
 	DefaultConvType  = ChangeNothing
 )
+
+const NoLimit = -1
 
 // ConvTypes
 const (

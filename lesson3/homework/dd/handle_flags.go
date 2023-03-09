@@ -17,9 +17,9 @@ func ParseFlags() (*Options, []error) {
 }
 
 func DefineFlags(opts *Options) {
-	flag.StringVar(&opts.From, "from", DefaultFrom, "Sets file to read. By default - stdin")
+	flag.StringVar(&opts.From, "from", Stdin, "Sets file to read. By default - stdin")
 
-	flag.StringVar(&opts.To, "to", DefaultTo, "Sets file to write. By default - stdout")
+	flag.StringVar(&opts.To, "to", Stdout, "Sets file to write. By default - stdout")
 
 	flag.IntVar(&opts.Offset, "offset", DefaultOffset, "Sets the number of bytes to skip from the beginning of the "+
 		"input file for writing. By default - 0")
@@ -50,35 +50,41 @@ func validateFile(path string) error {
 }
 
 func validateInputFile(path string) error {
-	if path == DefaultFrom {
+	if path == Stdin {
 		return nil
 	}
 	return validateFile(path)
 }
 
 func validateOutputFile(path string) error {
-	if path == DefaultTo {
+	if path == Stdout {
 		return nil
 	}
 	return validateFile(path)
 }
 
 func validateOffset(path string, offset int) error {
+	if path == Stdin {
+		return nil
+	}
+
 	file, err := os.Stat(path)
 
-	if err != nil {
+	if offset < 0 {
+		return errors.New("negative offset")
+	} else if os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
 		return err
 	} else if file.Size() < int64(offset) {
 		return errors.New("offset is greater than input file size")
-	} else if offset < 0 {
-		return errors.New("negative offset")
 	}
 
 	return nil
 }
 
 func validateLimit(limit int) error {
-	if limit < 0 && limit != DefaultLimit {
+	if limit < 0 && limit != NoLimit {
 		return errors.New("negative limit")
 	}
 
