@@ -6,7 +6,7 @@ type Options struct {
 	Offset    int
 	Limit     int
 	BlockSize int
-	ConvType  int
+	Conv      string
 }
 
 // Default Options values
@@ -21,8 +21,8 @@ const (
 
 // ConvTypes
 const (
-	ChangeNothing = iota
-	UpperCase
-	LowerCase
-	TrimSpaces
+	ChangeNothing = ""
+	UpperCase     = "upper_case"
+	LowerCase     = "lower_case"
+	TrimSpaces    = "trim_spaces"
 )
