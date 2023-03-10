@@ -5,11 +5,11 @@ import (
 	"io"
 	"os"
 	"strings"
-	"syscall"
+	"unicode"
 )
 
 func Start(opts *Options) {
-	r := readSeekCloser(opts.From)
+	r := closerReaderAt(opts.From)
 	w := writerCloser(opts.To)
 
 	process(r, w, opts)
@@ -18,7 +18,7 @@ func Start(opts *Options) {
 	closeStream(w)
 }
 
-func readSeekCloser(from string) io.ReadSeekCloser {
+func closerReaderAt(from string) CloserReaderAt {
 	if from == Stdin {
 		return os.Stdin
 	}
@@ -34,83 +34,23 @@ func writerCloser(to string) io.WriteCloser {
 	return file
 }
 
-func process(rs io.ReadSeeker, w io.Writer, opts *Options) {
-	if isStdin(rs) {
-		skipOffset(rs, opts)
-	} else {
-		seekFromStart(rs, opts.Offset)
-	}
-	startCopy(rs, w, opts)
+func process(r CloserReaderAt, w io.Writer, opts *Options) {
+	bytes := make([]byte, opts.Limit)
+
+	readBytesAt(r, bytes, opts.Offset)
+	convertedBytes := convert(bytes, opts.Conv)
+	writeBytes(w, convertedBytes)
 }
 
-func isStdin(rs io.ReadSeeker) bool {
-	file, ok := rs.(*os.File)
-	if !ok || file.Fd() != uintptr(syscall.Stdin) {
-		return false
-	}
-	return true
-}
-
-func startCopy(rs io.ReadSeeker, w io.Writer, opts *Options) {
-	block := make([]byte, opts.BlockSize)
-
-	for {
-		readBytesCount := readBlock(rs, block)
-		if readBytesCount == 0 {
-			break
-		}
-		if readBytesCount < opts.BlockSize {
-			block = block[:readBytesCount]
-		}
-
-		block = convertBlock(block, opts.Conv)
-
-		writeBlock(w, block)
-	}
-
-}
-
-func skipOffset(rs io.ReadSeeker, opts *Options) {
-	block := make([]byte, opts.BlockSize)
-
-	remainingBytesCount := opts.Offset
-
-	for remainingBytesCount > opts.BlockSize {
-		readBytesCount := readBlock(rs, block)
-		if noMoreBytes(readBytesCount, opts.BlockSize) {
-			return
-		}
-		remainingBytesCount -= readBytesCount
-	}
-
-	readBlock(rs, make([]byte, remainingBytesCount))
-}
-
-func noMoreBytes(readBytesCount, blockSize int) bool {
-	if readBytesCount < blockSize {
-		fmt.Fprintln(os.Stderr, "offset is greater than input data size")
-		return true
-	}
-	return false
-}
-
-func seekFromStart(rs io.Seeker, offset int) {
-	_, err := rs.Seek(int64(offset), io.SeekStart)
+func readBytesAt(r io.ReaderAt, bytes []byte, offset int) {
+	_, err := r.ReadAt(bytes, int64(offset))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "cannot read bytes at %d\n", offset)
 	}
 }
 
-func readBlock(r io.Reader, block []byte) int {
-	readBytesCount, err := r.Read(block)
-	if err != nil && err != io.EOF {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	return readBytesCount
-}
-
-func writeBlock(w io.Writer, block []byte) {
-	_, err := w.Write(block)
+func writeBytes(w io.Writer, bytes []byte) {
+	_, err := w.Write(bytes)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
@@ -122,15 +62,25 @@ func closeStream(c io.Closer) {
 	}
 }
 
-func convertBlock(block []byte, conv string) []byte {
-	str := string(block)
+func convert(bytes []byte, conv *string) []byte {
+	str := string(bytes)
+	readConvTypes := strings.Split(*conv, ",")
 
-	switch conv {
-	case UpperCase:
-		str = strings.ToUpper(str)
-	case LowerCase:
-		str = strings.ToLower(str)
+	for _, v := range readConvTypes {
+		applyConv(str, v)
 	}
 
 	return []byte(str)
+}
+
+func applyConv(str, conv string) string {
+	switch conv {
+	case "upper_case":
+		str = strings.ToUpper(str)
+	case "lower_case":
+		str = strings.ToLower(str)
+	case "trim_spaces":
+		str = strings.TrimFunc(str, unicode.IsSpace)
+	}
+	return str
 }

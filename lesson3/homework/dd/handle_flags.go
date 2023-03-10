@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"os"
+	"strings"
 )
 
 func ParseFlags() (*Options, []error) {
@@ -30,7 +31,7 @@ func DefineFlags(opts *Options) {
 	flag.IntVar(&opts.BlockSize, "block-size", DefaultBlockSize, "Sets the size of one block in bytes "+
 		"for reading and writing. By default - 1")
 
-	flag.StringVar(&opts.Conv, "conv", DefaultConvType, "Sets text conversion options. "+
+	opts.Conv = flag.String("conv", DefaultConvType, "Sets text conversion options. "+
 		"By default original text is copied without changes")
 }
 
@@ -40,7 +41,7 @@ func ValidateFlags(opts *Options) (report []error) {
 	report = appendIfErr(report, validateOffset(opts.From, opts.Offset))
 	report = appendIfErr(report, validateLimit(opts.Limit))
 	report = appendIfErr(report, validateBlockSize(opts.BlockSize))
-	report = appendIfErr(report, validateConv(opts.Conv))
+	report = appendIfErr(report, validateConv(opts.Conv)...)
 	return
 }
 
@@ -99,25 +100,34 @@ func validateBlockSize(blockSize int) error {
 	return nil
 }
 
-func validateConv(conv string) error {
-	switch conv {
-	case ChangeNothing:
-		return nil
-	case UpperCase:
-		return nil
-	case LowerCase:
-		return nil
-	case TrimSpaces:
-		return nil
-	default:
-		return errors.New("unknown conv value: " + conv)
+func validateConv(conv *string) []error {
+	readConvTypes := strings.Split(*conv, ",")
+	var typeErrors []error
+	var res error
+
+	for _, v := range readConvTypes {
+		res = validateConvType(v)
+		appendIfErr(typeErrors, res)
 	}
+
+	return typeErrors
 }
 
-func appendIfErr(errors []error, err error) []error {
-	if err != nil {
-		return append(errors, err)
+func validateConvType(cType string) error {
+	convTypes := convTypes()
+	for _, v := range convTypes {
+		if cType == v {
+			return nil
+		}
 	}
+	return errors.New(cType + ": unexpected conv type")
+}
 
+func appendIfErr(errors []error, possibleErrors ...error) []error {
+	for _, e := range possibleErrors {
+		if e != nil {
+			errors = append(errors, e)
+		}
+	}
 	return errors
 }

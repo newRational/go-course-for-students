@@ -1,12 +1,19 @@
 package dd
 
+import "io"
+
+type CloserReaderAt interface {
+	io.ReaderAt
+	io.Closer
+}
+
 type Options struct {
 	From      string
 	To        string
 	Offset    int
 	Limit     int
 	BlockSize int
-	Conv      string
+	Conv      *string
 }
 
 // Default Options values
@@ -15,16 +22,12 @@ const (
 	Stdout           = "stdout"
 	DefaultOffset    = 0
 	DefaultLimit     = NoLimit
-	DefaultBlockSize = 1
-	DefaultConvType  = ChangeNothing
+	DefaultBlockSize = 4
+	DefaultConvType  = ""
 )
 
 const NoLimit = -1
 
-// ConvTypes
-const (
-	ChangeNothing = ""
-	UpperCase     = "upper_case"
-	LowerCase     = "lower_case"
-	TrimSpaces    = "trim_spaces"
-)
+func convTypes() []string {
+	return []string{"", "upper_case", "lower_case", "trim_spaces"}
+}
