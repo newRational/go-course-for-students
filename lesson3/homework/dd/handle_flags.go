@@ -8,30 +8,31 @@ import (
 )
 
 func ParseFlags() (*Options, []error) {
-	var opts Options
+	opts := &Options{}
 
-	DefineFlags(&opts)
+	DefineFlags(opts)
 	flag.Parse()
-	invalidFlags := ValidateFlags(&opts)
+	invalidFlags := ValidateFlags(opts)
+	adjustFlags(opts, invalidFlags)
 
-	return &opts, invalidFlags
+	return opts, invalidFlags
 }
 
 func DefineFlags(opts *Options) {
-	flag.StringVar(&opts.From, "from", Stdin, "Sets file to read. By default - stdin")
+	flag.StringVar(&opts.From, "from", stdin, "Sets file to read. By default - stdin")
 
-	flag.StringVar(&opts.To, "to", Stdout, "Sets file to write. By default - stdout")
+	flag.StringVar(&opts.To, "to", stdout, "Sets file to write. By default - stdout")
 
-	flag.IntVar(&opts.Offset, "offset", DefaultOffset, "Sets the number of bytes to skip from the beginning of the "+
+	flag.Int64Var(&opts.Offset, "offset", defaultOffset, "Sets the number of bytes to skip from the beginning of the "+
 		"input file for writing. By default - 0")
 
-	flag.IntVar(&opts.Limit, "limit", DefaultLimit, "Sets the maximum number of bytes to read. "+
+	flag.Int64Var(&opts.Limit, "limit", defaultLimit, "Sets the maximum number of bytes to read. "+
 		"By default all content is copied starting with -offset")
 
-	flag.IntVar(&opts.BlockSize, "block-size", DefaultBlockSize, "Sets the size of one block in bytes "+
+	flag.Int64Var(&opts.BlockSize, "block-size", defaultBlockSize, "Sets the size of one block in bytes "+
 		"for reading and writing. By default - 1")
 
-	opts.Conv = flag.String("conv", DefaultConvType, "Sets text conversion options. "+
+	opts.Conv = flag.String("conv", defaultConvType, "Sets text conversion options. "+
 		"By default original text is copied without changes")
 }
 
@@ -51,21 +52,21 @@ func validateFile(path string) error {
 }
 
 func validateInputFile(path string) error {
-	if path == Stdin {
+	if path == stdin {
 		return nil
 	}
 	return validateFile(path)
 }
 
 func validateOutputFile(path string) error {
-	if path == Stdout {
+	if path == stdout {
 		return nil
 	}
 	return validateFile(path)
 }
 
-func validateOffset(path string, offset int) error {
-	if path == Stdin {
+func validateOffset(path string, offset int64) error {
+	if path == stdin {
 		return nil
 	}
 
@@ -77,14 +78,14 @@ func validateOffset(path string, offset int) error {
 		return nil
 	} else if err != nil {
 		return err
-	} else if file.Size() < int64(offset) {
+	} else if file.Size() < offset {
 		return errors.New("offset is greater than input file size")
 	}
 
 	return nil
 }
 
-func validateLimit(limit int) error {
+func validateLimit(limit int64) error {
 	if limit < 0 && limit != NoLimit {
 		return errors.New("negative limit")
 	}
@@ -92,7 +93,7 @@ func validateLimit(limit int) error {
 	return nil
 }
 
-func validateBlockSize(blockSize int) error {
+func validateBlockSize(blockSize int64) error {
 	if blockSize < 0 {
 		return errors.New("negative block-size")
 	}
@@ -130,4 +131,33 @@ func appendIfErr(errors []error, possibleErrors ...error) []error {
 		}
 	}
 	return errors
+}
+
+func adjustFlags(opts *Options, invalidFlags []error) {
+	if invalidFlags != nil {
+		return
+	}
+
+	if isNotStdin(opts.From) {
+		configureLimit(opts)
+	}
+}
+
+func isStdin(from string) bool {
+	return from == stdin
+}
+func isNotStdin(from string) bool {
+	return from != stdin
+}
+
+func configureLimit(opts *Options) {
+	if opts.Limit == NoLimit {
+		opts.Limit = fileSize(opts.From)
+	}
+}
+
+func fileSize(path string) int64 {
+	file, _ := os.Open(path)
+	fileInfo, _ := file.Stat()
+	return fileInfo.Size()
 }

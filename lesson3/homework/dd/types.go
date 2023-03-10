@@ -10,20 +10,20 @@ type CloserReaderAt interface {
 type Options struct {
 	From      string
 	To        string
-	Offset    int
-	Limit     int
-	BlockSize int
+	Offset    int64
+	Limit     int64
+	BlockSize int64
 	Conv      *string
 }
 
 // Default Options values
 const (
-	Stdin            = "stdin"
-	Stdout           = "stdout"
-	DefaultOffset    = 0
-	DefaultLimit     = NoLimit
-	DefaultBlockSize = 4
-	DefaultConvType  = ""
+	stdin            = "stdin"
+	stdout           = "stdout"
+	defaultOffset    = 0
+	defaultLimit     = NoLimit
+	defaultBlockSize = 4
+	defaultConvType  = ""
 )
 
 const NoLimit = -1
