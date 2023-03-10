@@ -81,7 +81,7 @@ func copyAndConvert(r io.ReaderAt, w io.Writer, opts *Options) {
 
 func readBytesAt(r io.ReaderAt, bytes []byte, offset int64) {
 	_, err := r.ReadAt(bytes, offset)
-	reportIfErr(err)
+	reportIfErr(err, io.EOF)
 }
 
 func convert(bytes []byte, conv *string) []byte {
@@ -89,7 +89,7 @@ func convert(bytes []byte, conv *string) []byte {
 	readConvTypes := strings.Split(*conv, ",")
 
 	for _, v := range readConvTypes {
-		applyConv(str, v)
+		str = applyConv(str, v)
 	}
 
 	return []byte(str)
@@ -127,8 +127,18 @@ func copyFile(w io.Writer, r io.Reader) {
 	reportIfErr(err)
 }
 
-func reportIfErr(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+func reportIfErr(err error, except ...error) {
+	if isExceptOrNil(err, except...) {
+		return
 	}
+	fmt.Fprintln(os.Stderr, err)
+}
+
+func isExceptOrNil(err error, except ...error) bool {
+	for _, e := range except {
+		if err == e {
+			return true
+		}
+	}
+	return err == nil
 }

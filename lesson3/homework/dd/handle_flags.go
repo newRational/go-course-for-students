@@ -62,7 +62,10 @@ func validateOutputFile(path string) error {
 	if path == stdout {
 		return nil
 	}
-	return validateFile(path)
+	if validateFile(path) == nil {
+		return errors.New("the file already exists")
+	}
+	return nil
 }
 
 func validateOffset(path string, offset int64) error {

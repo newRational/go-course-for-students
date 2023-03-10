@@ -12,6 +12,5 @@ func main() {
 		_, _ = fmt.Fprintln(os.Stderr, "cannot parse flags:", err)
 		os.Exit(1)
 	}
-
 	dd.Start(opts)
 }
