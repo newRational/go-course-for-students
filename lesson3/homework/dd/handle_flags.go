@@ -126,7 +126,7 @@ func validateConvExistence(readConvTypes []string) []error {
 
 func validateConvType(readConvType string) error {
 	switch readConvType {
-	case UpperCase, LowerCase, TrimSpaces:
+	case ChangeNothing, UpperCase, LowerCase, TrimSpaces:
 		return nil
 	}
 	return errors.New(readConvType + ": unexpected conv type")
