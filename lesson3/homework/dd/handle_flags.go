@@ -20,18 +20,18 @@ func ParseFlags() (*Options, []error) {
 }
 
 func DefineFlags(opts *Options) {
-	flag.StringVar(&opts.From, "from", stdin, "Sets file to read. By default - stdin")
+	flag.StringVar(&opts.From, "from", stdin, "Sets file to read. By default: stdin")
 
-	flag.StringVar(&opts.To, "to", stdout, "Sets file to write. By default - stdout")
+	flag.StringVar(&opts.To, "to", stdout, "Sets file to write. By default: stdout")
 
 	flag.Int64Var(&opts.Offset, "offset", defaultOffset, "Sets the number of bytes to skip from the beginning of the "+
-		"input file for writing. By default - 0")
+		"input file for writing. By default: 0")
 
 	flag.Int64Var(&opts.Limit, "limit", defaultLimit, "Sets the maximum number of bytes to read. "+
 		"By default all content is copied starting with -offset")
 
 	flag.Int64Var(&opts.BlockSize, "block-size", defaultBlockSize, "Sets the size of one block in bytes "+
-		"for reading and writing. By default - 1")
+		"for reading and writing. By default: 1")
 
 	opts.Conv = flag.String("conv", defaultConvType, "Sets text conversion options. "+
 		"By default original text is copied without changes")
@@ -53,14 +53,14 @@ func validateFile(path string) error {
 }
 
 func validateInputFile(path string) error {
-	if path == stdin {
+	if isStdin(path) {
 		return nil
 	}
 	return validateFile(path)
 }
 
 func validateOutputFile(path string) error {
-	if path == stdout {
+	if isStdout(path) {
 		return nil
 	}
 	if validateFile(path) == nil {
@@ -73,7 +73,7 @@ func validateOffset(path string, offset int64) error {
 	if offset < 0 {
 		return errors.New("negative offset")
 	}
-	if path == stdin {
+	if isStdin(path) {
 		return nil
 	}
 
@@ -101,15 +101,17 @@ func validateBlockSize(blockSize int64) error {
 }
 
 func validateConv(conv *string) []error {
-	var errors []error
+	var convErrors []error
 	readConvTypes := strings.Split(*conv, ",")
 
-	errors = appendIfErr(errors, validateConvExistence(readConvTypes)...)
-	errors = appendIfErr(errors, validateNonContradictory(readConvTypes))
+	convErrors = appendIfErr(convErrors, validateConvExistence(readConvTypes)...)
+	convErrors = appendIfErr(convErrors, validateNonContradictory(readConvTypes))
 
-	return errors
+	return convErrors
 }
 
+// validateConvExistence проверяет считанные значения флага conv
+// на существование (на корректность ввода)
 func validateConvExistence(readConvTypes []string) []error {
 	var typeErrors []error
 	var res error
@@ -122,26 +124,27 @@ func validateConvExistence(readConvTypes []string) []error {
 	return typeErrors
 }
 
+func validateConvType(readConvType string) error {
+	switch readConvType {
+	case UpperCase, LowerCase, TrimSpaces:
+		return nil
+	}
+	return errors.New(readConvType + ": unexpected conv type")
+}
+
+// validateNonContradictory определяет валидность
+// набора, состоящего из типов конвертации, в соответствии
+// с его содержимым
 func validateNonContradictory(readConvTypes []string) error {
 	switch len(readConvTypes) {
 	case 1, 0:
 		return nil
 	case 2:
-		if readConvTypes[0] == "trim_spaces" || readConvTypes[1] == "trim_spaces" {
+		if readConvTypes[0] == TrimSpaces || readConvTypes[1] == TrimSpaces {
 			return nil
 		}
 	}
 	return errors.New("invalid set of conv types")
-}
-
-func validateConvType(readConvType string) error {
-	convTypes := convTypes()
-	for _, v := range convTypes {
-		if readConvType == v {
-			return nil
-		}
-	}
-	return errors.New(readConvType + ": unexpected conv type")
 }
 
 func appendIfErr(errors []error, possibleErrors ...error) []error {
@@ -153,6 +156,8 @@ func appendIfErr(errors []error, possibleErrors ...error) []error {
 	return errors
 }
 
+// adjustFlags корректирует флаги для их более
+// удобного использования
 func adjustFlags(opts *Options, invalidFlags []error) {
 	if invalidFlags != nil {
 		return
@@ -163,19 +168,17 @@ func adjustFlags(opts *Options, invalidFlags []error) {
 	}
 }
 
-func isStdin(from string) bool {
-	return from == stdin
-}
-func isNotStdin(from string) bool {
-	return from != stdin
-}
-
+// configureLimit уточняет значение limit
 func configureLimit(opts *Options) {
 	if opts.Limit == NoLimit {
 		opts.Limit = fileSize(opts.From)
 	} else {
 		opts.Limit = lib.MinInt64(opts.Limit, fileSize(opts.From))
 	}
+}
+
+func isNotStdin(from string) bool {
+	return from != stdin
 }
 
 func fileSize(path string) int64 {

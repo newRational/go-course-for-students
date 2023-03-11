@@ -9,8 +9,8 @@ import (
 )
 
 func Start(opts *Options) {
-	r := closerReaderAt(opts.From)
-	w := writerCloser(opts.To)
+	r := readAtCloser(opts.From)
+	w := writeCloser(opts.To)
 
 	process(r, w, opts)
 
@@ -18,8 +18,8 @@ func Start(opts *Options) {
 	closeStream(w)
 }
 
-func closerReaderAt(from string) CloserReaderAt {
-	if from == stdin {
+func readAtCloser(from string) ReadAtCloser {
+	if isStdin(from) {
 		return os.Stdin
 	}
 	file, err := os.Open(from)
@@ -27,8 +27,8 @@ func closerReaderAt(from string) CloserReaderAt {
 	return file
 }
 
-func writerCloser(to string) io.WriteCloser {
-	if to == stdout {
+func writeCloser(to string) io.WriteCloser {
+	if isStdout(to) {
 		return os.Stdout
 	}
 	file, err := os.Create(to)
@@ -44,9 +44,12 @@ func process(r io.ReaderAt, w io.Writer, opts *Options) {
 	}
 }
 
+// processFromStdin сначала создает новый readAtCloser на
+// основе временного файла, затем обрабатывает данные,
+// после чего временный файл удаляется
 func processFromStdin(w io.Writer, opts *Options) {
 	tmpFilePath := ".tmp"
-	r := readerOnNewFile(tmpFilePath, opts)
+	r := readAtCloserOnNewFile(tmpFilePath, opts)
 
 	copyAndConvert(r, w, opts)
 
@@ -54,24 +57,12 @@ func processFromStdin(w io.Writer, opts *Options) {
 	removeFile(tmpFilePath)
 }
 
-func readerOnNewFile(newFilePath string, opts *Options) CloserReaderAt {
-	createAndFillFile(newFilePath, os.Stdin, opts)
-	reportIfErr(validateOffset(newFilePath, opts.Offset))
-	opts.From = newFilePath
-	configureLimit(opts)
-	return closerReaderAt(newFilePath)
-}
-
-func createAndFillFile(outputPath string, r io.Reader, opts *Options) {
-	w := writerCloser(outputPath)
-	copy(w, r, opts)
-	closeStream(w)
-}
-
 func processFromFile(r io.ReaderAt, w io.Writer, opts *Options) {
 	copyAndConvert(r, w, opts)
 }
 
+// Данные из readerAt копируются в слайс, затем конвертируются,
+// после чего выводятся
 func copyAndConvert(r io.ReaderAt, w io.Writer, opts *Options) {
 	bytes := make([]byte, opts.Limit)
 
@@ -80,11 +71,8 @@ func copyAndConvert(r io.ReaderAt, w io.Writer, opts *Options) {
 	writeBytes(w, convertedBytes)
 }
 
-func readBytesAt(r io.ReaderAt, bytes []byte, offset int64) {
-	_, err := r.ReadAt(bytes, offset)
-	reportIfErr(err, io.EOF)
-}
-
+// convert применяет каждое указанное правило
+// конвертации к считанному слайсу байтов
 func convert(bytes []byte, conv *string) []byte {
 	str := string(bytes)
 	readConvTypes := strings.Split(*conv, ",")
@@ -109,6 +97,39 @@ func applyConv(str, conv string) string {
 	return str
 }
 
+// readAtCloserOnNewFile сначала создается новый файл и заполняется
+// содежимым из stdin, затем проверятся offset на валидность, после чего
+// изменяются значения полей экземпляра Options и возвращается новый
+// readAtCloser
+func readAtCloserOnNewFile(newFilePath string, opts *Options) ReadAtCloser {
+	createAndFillFile(newFilePath, os.Stdin, opts)
+	reportIfErr(validateOffset(newFilePath, opts.Offset))
+	opts.From = newFilePath
+	configureLimit(opts)
+	return readAtCloser(newFilePath)
+}
+
+func createAndFillFile(outputPath string, r io.Reader, opts *Options) {
+	w := writeCloser(outputPath)
+	copyAccordingToLimit(w, r, opts)
+	closeStream(w)
+}
+
+func copyAccordingToLimit(w io.Writer, r io.Reader, opts *Options) {
+	var err error
+	if opts.Limit == NoLimit {
+		_, err = io.Copy(w, r)
+	} else {
+		_, err = io.CopyN(w, r, opts.Limit+opts.Offset)
+	}
+	reportIfErr(err, io.EOF)
+}
+
+func readBytesAt(r io.ReaderAt, bytes []byte, offset int64) {
+	_, err := r.ReadAt(bytes, offset)
+	reportIfErr(err, io.EOF)
+}
+
 func writeBytes(w io.Writer, bytes []byte) {
 	_, err := w.Write(bytes)
 	reportIfErr(err)
@@ -124,14 +145,12 @@ func removeFile(path string) {
 	reportIfErr(err)
 }
 
-func copy(w io.Writer, r io.Reader, opts *Options) {
-	var err error
-	if opts.Limit == NoLimit {
-		_, err = io.Copy(w, r)
-	} else {
-		_, err = io.CopyN(w, r, opts.Limit+opts.Offset)
-	}
-	reportIfErr(err, io.EOF)
+func isStdout(to string) bool {
+	return to == stdout
+}
+
+func isStdin(from string) bool {
+	return from == stdin
 }
 
 func reportIfErr(err error, except ...error) {

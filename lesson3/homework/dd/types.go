@@ -2,7 +2,7 @@ package dd
 
 import "io"
 
-type CloserReaderAt interface {
+type ReadAtCloser interface {
 	io.ReaderAt
 	io.Closer
 }
@@ -23,11 +23,15 @@ const (
 	defaultOffset    = 0
 	defaultLimit     = NoLimit
 	defaultBlockSize = 4
-	defaultConvType  = ""
+	defaultConvType  = ChangeNothing
 )
 
 const NoLimit = -1
 
-func convTypes() []string {
-	return []string{"", "upper_case", "lower_case", "trim_spaces"}
-}
+// ConvTypes
+const (
+	ChangeNothing = ""
+	UpperCase     = "upper_case"
+	LowerCase     = "lower_case"
+	TrimSpaces    = "trim_spaces"
+)
