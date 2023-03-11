@@ -101,26 +101,47 @@ func validateBlockSize(blockSize int64) error {
 }
 
 func validateConv(conv *string) []error {
+	var errors []error
 	readConvTypes := strings.Split(*conv, ",")
+
+	errors = appendIfErr(errors, validateConvExistence(readConvTypes)...)
+	errors = appendIfErr(errors, validateNonContradictory(readConvTypes))
+
+	return errors
+}
+
+func validateConvExistence(readConvTypes []string) []error {
 	var typeErrors []error
 	var res error
 
 	for _, v := range readConvTypes {
 		res = validateConvType(v)
-		appendIfErr(typeErrors, res)
+		typeErrors = appendIfErr(typeErrors, res)
 	}
 
 	return typeErrors
 }
 
-func validateConvType(cType string) error {
-	convTypes := convTypes()
-	for _, v := range convTypes {
-		if cType == v {
+func validateNonContradictory(readConvTypes []string) error {
+	switch len(readConvTypes) {
+	case 1, 0:
+		return nil
+	case 2:
+		if readConvTypes[0] == "trim_spaces" || readConvTypes[1] == "trim_spaces" {
 			return nil
 		}
 	}
-	return errors.New(cType + ": unexpected conv type")
+	return errors.New("invalid set of conv types")
+}
+
+func validateConvType(readConvType string) error {
+	convTypes := convTypes()
+	for _, v := range convTypes {
+		if readConvType == v {
+			return nil
+		}
+	}
+	return errors.New(readConvType + ": unexpected conv type")
 }
 
 func appendIfErr(errors []error, possibleErrors ...error) []error {
