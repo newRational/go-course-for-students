@@ -3,6 +3,7 @@ package dd
 import (
 	"errors"
 	"flag"
+	"lecture03_homework/dd/lib"
 	"os"
 	"strings"
 )
@@ -69,19 +70,14 @@ func validateOutputFile(path string) error {
 }
 
 func validateOffset(path string, offset int64) error {
+	if offset < 0 {
+		return errors.New("negative offset")
+	}
 	if path == stdin {
 		return nil
 	}
 
-	file, err := os.Stat(path)
-
-	if offset < 0 {
-		return errors.New("negative offset")
-	} else if os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return err
-	} else if file.Size() < offset {
+	if fileSize(path) < offset {
 		return errors.New("offset is greater than input file size")
 	}
 
@@ -156,11 +152,12 @@ func isNotStdin(from string) bool {
 func configureLimit(opts *Options) {
 	if opts.Limit == NoLimit {
 		opts.Limit = fileSize(opts.From)
+	} else {
+		opts.Limit = lib.MinInt64(opts.Limit, fileSize(opts.From))
 	}
 }
 
 func fileSize(path string) int64 {
-	file, _ := os.Open(path)
-	fileInfo, _ := file.Stat()
+	fileInfo, _ := os.Stat(path)
 	return fileInfo.Size()
 }

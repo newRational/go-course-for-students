@@ -55,15 +55,16 @@ func processFromStdin(w io.Writer, opts *Options) {
 }
 
 func readerOnNewFile(newFilePath string, opts *Options) CloserReaderAt {
-	createAndFillFile(newFilePath, os.Stdin)
+	createAndFillFile(newFilePath, os.Stdin, opts)
+	reportIfErr(validateOffset(newFilePath, opts.Offset))
 	opts.From = newFilePath
 	configureLimit(opts)
 	return closerReaderAt(newFilePath)
 }
 
-func createAndFillFile(outputPath string, r io.Reader) {
+func createAndFillFile(outputPath string, r io.Reader, opts *Options) {
 	w := writerCloser(outputPath)
-	copyFile(w, r)
+	copy(w, r, opts)
 	closeStream(w)
 }
 
@@ -122,9 +123,14 @@ func removeFile(path string) {
 	reportIfErr(err)
 }
 
-func copyFile(w io.Writer, r io.Reader) {
-	_, err := io.Copy(w, r)
-	reportIfErr(err)
+func copy(w io.Writer, r io.Reader, opts *Options) {
+	var err error
+	if opts.Limit == NoLimit {
+		_, err = io.Copy(w, r)
+	} else {
+		_, err = io.CopyN(w, r, opts.Limit+opts.Offset)
+	}
+	reportIfErr(err, io.EOF)
 }
 
 func reportIfErr(err error, except ...error) {
@@ -132,6 +138,7 @@ func reportIfErr(err error, except ...error) {
 		return
 	}
 	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
 }
 
 func isExceptOrNil(err error, except ...error) bool {
