@@ -3,6 +3,13 @@ package tagcloud
 type TagCloud struct {
 	frequencies map[int]int
 	tags        map[string]int
+=======
+
+	// tags отображает Tag на индекс, по которому расположен
+	// элемент типа TagStat с данным Tag
+	tags        map[string]int
+
+	// stats - непосредственное хранилище элементов типа TagStat
 	stats       []TagStat
 }
 
