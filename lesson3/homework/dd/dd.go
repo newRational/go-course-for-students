@@ -86,11 +86,11 @@ func convert(bytes []byte, conv *string) []byte {
 
 func applyConv(str, conv string) string {
 	switch conv {
-	case "upper_case":
+	case UpperCase:
 		str = strings.ToUpper(str)
-	case "lower_case":
+	case LowerCase:
 		str = strings.ToLower(str)
-	case "trim_spaces":
+	case TrimSpaces:
 		str = strings.Trim(str, "\x00")
 		str = strings.TrimFunc(str, unicode.IsSpace)
 	}
