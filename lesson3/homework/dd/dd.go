@@ -103,6 +103,7 @@ func applyConv(str, conv string) string {
 	case "lower_case":
 		str = strings.ToLower(str)
 	case "trim_spaces":
+		str = strings.Trim(str, "\x00")
 		str = strings.TrimFunc(str, unicode.IsSpace)
 	}
 	return str
