@@ -78,7 +78,7 @@ func validateOffset(from string, offset int64) error {
 		return nil
 	}
 	if validateInput(from) == nil && fileSize(from) < offset {
-		return errors.New("offset is greater than input file size")
+		return errors.New("offset is greater than input size")
 	}
 
 	return nil
