@@ -65,7 +65,7 @@ func validateOutput(to string) error {
 		return nil
 	}
 	if validateFile(to) == nil {
-		return errors.New("the file already exists")
+		return os.ErrExist
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func validateOffset(from string, offset int64) error {
 	if from == stdin {
 		return nil
 	}
-	if fileSize(from) < offset {
+	if validateInput(from) == nil && fileSize(from) < offset {
 		return errors.New("offset is greater than input file size")
 	}
 
@@ -151,7 +151,7 @@ func adjustFlags(opts *Options, invalidFlags error) {
 		return
 	}
 
-	if opts.From != stdin {
+	if opts.From != stdin && validateInput(opts.From) == nil {
 		configureLimit(opts)
 	}
 }

@@ -56,7 +56,6 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 	if opts.Limit != NoLimit {
 		r = io.LimitReader(r, opts.Limit+opts.Offset)
 	}
-
 	bytes, err := io.ReadAll(r)
 	if err != nil {
 		return err
