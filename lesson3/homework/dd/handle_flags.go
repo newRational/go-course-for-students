@@ -151,7 +151,7 @@ func adjustFlags(opts *Options, invalidFlags error) {
 		return
 	}
 
-	if opts.From != stdin && validateInput(opts.From) == nil {
+	if validateInput(opts.From) == nil {
 		configureLimit(opts)
 	}
 }
