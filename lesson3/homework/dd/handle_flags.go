@@ -159,7 +159,7 @@ func adjustFlags(opts *Options, invalidFlags error) {
 // configureLimit уточняет значение limit
 func configureLimit(opts *Options) {
 	if opts.Limit == NoLimit {
-		opts.Limit = fileSize(opts.From)
+		opts.Limit = fileSize(opts.From) - opts.Offset
 	} else {
 		opts.Limit = lib.MinInt64(opts.Limit, fileSize(opts.From))
 	}

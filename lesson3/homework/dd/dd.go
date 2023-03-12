@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 func Start(opts *Options) (err error) {
@@ -23,11 +24,7 @@ func Start(opts *Options) (err error) {
 		err = errors.Join(r.Close(), w.Close())
 	}()
 
-	if opts.Limit == NoLimit {
-		err = processNoLimit(r, w, opts)
-	} else {
-		err = processLimit(r, w, opts)
-	}
+	err = processLimit(r, w, opts)
 
 	return err
 }
@@ -60,7 +57,12 @@ func writeCloser(to string) (io.WriteCloser, error) {
 
 func processLimit(r io.Reader, w io.Writer, opts *Options) error {
 	block := make([]byte, opts.BlockSize)
+
 	remainingBytesCount := opts.Limit
+
+	if opts.Limit == NoLimit {
+		remainingBytesCount = 1
+	}
 
 	err := skipOffset(r, opts, block)
 	if err != nil {
@@ -68,50 +70,25 @@ func processLimit(r io.Reader, w io.Writer, opts *Options) error {
 	}
 
 	for remainingBytesCount > 0 {
-		readBytesCount, _ := r.Read(block)
+		readBytes, _ := readBlock(r, block)
+		readBytesCount := len(readBytes)
+
 		if readBytesCount == 0 {
 			break
 		}
 
-		if remainingBytesCount < opts.BlockSize {
-			block = block[:remainingBytesCount]
+		if opts.Limit != NoLimit && remainingBytesCount < opts.BlockSize {
+			readBytes = readBytes[:remainingBytesCount]
 		}
-		if int64(readBytesCount) < opts.BlockSize {
-			block = block[:readBytesCount]
-		}
-		convertedBytes := convert(block, opts.Conv)
+
+		convertedBytes := convert(readBytes, opts.Conv)
 
 		if _, err = w.Write(convertedBytes); err != nil {
 			return err
 		}
-		remainingBytesCount -= int64(readBytesCount)
-	}
 
-	return nil
-}
-
-func processNoLimit(r io.Reader, w io.Writer, opts *Options) error {
-	block := make([]byte, opts.BlockSize)
-
-	err := skipOffset(r, opts, block)
-	if err != nil {
-		return err
-	}
-
-	for {
-		readBytesCount, _ := r.Read(block)
-		if readBytesCount == 0 {
-			break
-		}
-
-		if int64(readBytesCount) < opts.BlockSize {
-			block = block[:readBytesCount]
-		}
-
-		convertedBytes := convert(block, opts.Conv)
-
-		if _, err = w.Write(convertedBytes); err != nil {
-			return err
+		if opts.Limit != NoLimit {
+			remainingBytesCount -= int64(readBytesCount)
 		}
 	}
 
@@ -121,7 +98,7 @@ func processNoLimit(r io.Reader, w io.Writer, opts *Options) error {
 func skipOffset(r io.Reader, opts *Options, block []byte) error {
 	remainingBytesCount := opts.Offset
 
-	for remainingBytesCount > opts.BlockSize {
+	for remainingBytesCount >= opts.BlockSize {
 		readBytesCount, _ := r.Read(block)
 		if readBytesCount == 0 {
 			return errors.New("offset is greater than input size")
@@ -133,23 +110,43 @@ func skipOffset(r io.Reader, opts *Options, block []byte) error {
 	return nil
 }
 
-/* ---------------- Считывание по блока ------------------
-1. 	en, block-size = 4, offset = 0, limit = no, conv = no				+
-2.	en, block-size = 4, offset = 0, limit = no, conv = upper_case		+
-3.	en, block-size = 4, offset = 0, limit = no, conv = lower_case		+
+func readBlock(r io.Reader, block []byte) ([]byte, error) {
+	readBytesCount, _ := r.Read(block)
 
-4. 	en, block-size = 4, offset = 0, limit = set, conv = no				+
-5. 	en, block-size = 4, offset = 0, limit = set, conv = upper_case		+
-6. 	en, block-size = 4, offset = 0, limit = set, conv = lower_case		+
+	if readBytesCount < len(block) {
+		return block[:readBytesCount], nil
+	}
 
-7. 	en, block-size = 4, offset = set, limit = no, conv = no				+
-8. 	en, block-size = 4, offset = set, limit = no, conv = upper_case		+
-9. 	en, block-size = 4, offset = set, limit = no, conv = lower_case		+
+	runeStart, count := findStartByteFromBack(block)
+	diff := runeLen(runeStart) - count
 
-10.	en, block-size = 4, offset = set, limit = set, conv = no			+
-11.	en, block-size = 4, offset = set, limit = set, conv = upper_case	+
-12.	en, block-size = 4, offset = set, limit = set, conv = lower_case	+
----------------------------------------------------------------- */
+	tmp := make([]byte, diff)
+	_, _ = r.Read(tmp)
+	return append(block, tmp...), nil
+}
+
+func findStartByteFromBack(block []byte) (byte, int) {
+	i := 1
+	l := len(block)
+	for !utf8.RuneStart(block[l-i]) {
+		i++
+	}
+	return block[l-i], i
+}
+
+func runeLen(b byte) int {
+	if b&0b11110000 == 0b11110000 {
+		return 4
+	} else if b&0b11100000 == 0b11100000 {
+		return 3
+	} else if b&0b11000000 == 0b11000000 {
+		return 2
+	} else if b&0b10000000 == 0b10000000 {
+		return 0
+	} else {
+		return 1
+	}
+}
 
 func convert(bytes []byte, conv *string) []byte {
 	str := string(bytes)
