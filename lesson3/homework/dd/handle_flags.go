@@ -151,7 +151,7 @@ func adjustFlags(opts *Options, invalidFlags error) {
 		return
 	}
 
-	if isNotStdin(opts.From) {
+	if opts.From != stdin {
 		configureLimit(opts)
 	}
 }
@@ -163,10 +163,6 @@ func configureLimit(opts *Options) {
 	} else {
 		opts.Limit = lib.MinInt64(opts.Limit, fileSize(opts.From))
 	}
-}
-
-func isNotStdin(from string) bool {
-	return from != stdin
 }
 
 func fileSize(path string) int64 {
