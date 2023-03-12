@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ParseFlags() (*Options, []error) {
+func ParseFlags() (*Options, error) {
 	opts := &Options{}
 
 	DefineFlags(opts)
@@ -37,14 +37,15 @@ func DefineFlags(opts *Options) {
 		"By default original text is copied without changes")
 }
 
-func ValidateFlags(opts *Options) (report []error) {
-	report = appendIfErr(report, validateInputFile(opts.From))
-	report = appendIfErr(report, validateOutputFile(opts.To))
-	report = appendIfErr(report, validateOffset(opts.From, opts.Offset))
-	report = appendIfErr(report, validateLimit(opts.Limit))
-	report = appendIfErr(report, validateBlockSize(opts.BlockSize))
-	report = appendIfErr(report, validateConv(opts.Conv)...)
-	return
+func ValidateFlags(opts *Options) error {
+	return errors.Join(
+		validateInputFile(opts.From),
+		validateOutputFile(opts.To),
+		validateOffset(opts.From, opts.Offset),
+		validateLimit(opts.Limit),
+		validateBlockSize(opts.BlockSize),
+		validateConv(opts.Conv),
+	)
 }
 
 func validateFile(path string) error {
@@ -100,28 +101,28 @@ func validateBlockSize(blockSize int64) error {
 	return nil
 }
 
-func validateConv(conv *string) []error {
-	var convErrors []error
+func validateConv(conv *string) error {
 	readConvTypes := strings.Split(*conv, ",")
 
-	convErrors = appendIfErr(convErrors, validateConvExistence(readConvTypes)...)
-	convErrors = appendIfErr(convErrors, validateNonContradictory(readConvTypes))
+	err := errors.Join(
+		validateConvExistence(readConvTypes),
+		validateNonContradictory(readConvTypes),
+	)
 
-	return convErrors
+	return err
 }
 
 // validateConvExistence проверяет считанные значения флага conv
 // на существование (на корректность ввода)
-func validateConvExistence(readConvTypes []string) []error {
-	var typeErrors []error
-	var res error
-
+func validateConvExistence(readConvTypes []string) error {
+	var err error
 	for _, v := range readConvTypes {
-		res = validateConvType(v)
-		typeErrors = appendIfErr(typeErrors, res)
+		err = validateConvType(v)
+		if err != nil {
+			return err
+		}
 	}
-
-	return typeErrors
+	return err
 }
 
 func validateConvType(readConvType string) error {
@@ -147,18 +148,9 @@ func validateNonContradictory(readConvTypes []string) error {
 	return errors.New("invalid set of conv types")
 }
 
-func appendIfErr(errors []error, possibleErrors ...error) []error {
-	for _, e := range possibleErrors {
-		if e != nil {
-			errors = append(errors, e)
-		}
-	}
-	return errors
-}
-
 // adjustFlags корректирует флаги для их более
 // удобного использования
-func adjustFlags(opts *Options, invalidFlags []error) {
+func adjustFlags(opts *Options, invalidFlags error) {
 	if invalidFlags != nil {
 		return
 	}
