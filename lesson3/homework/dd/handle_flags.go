@@ -77,7 +77,6 @@ func validateOffset(path string, offset int64) error {
 	if isStdin(path) {
 		return nil
 	}
-
 	if fileSize(path) < offset {
 		return errors.New("offset is greater than input file size")
 	}
@@ -115,14 +114,11 @@ func validateConv(conv *string) error {
 // validateConvExistence проверяет считанные значения флага conv
 // на существование (на корректность ввода)
 func validateConvExistence(readConvTypes []string) error {
-	var err error
+	var errs []error
 	for _, v := range readConvTypes {
-		err = validateConvType(v)
-		if err != nil {
-			return err
-		}
+		errs = append(errs, validateConvType(v))
 	}
-	return err
+	return errors.Join(errs...)
 }
 
 func validateConvType(readConvType string) error {
