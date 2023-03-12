@@ -154,7 +154,8 @@ func TestBasicIntegration(t *testing.T) {
 
 		err := cmd.Run()
 
-		fmt.Println("stdout: ", stdout.String())
+		fmt.Println("err: ", stderr.String())
+		fmt.Println("len(bytes): ", stdout.String())
 
 		assert.NoError(t, err)
 		assert.Zero(t, stderr.Len(), stderr.String())

@@ -39,8 +39,8 @@ func DefineFlags(opts *Options) {
 
 func ValidateFlags(opts *Options) error {
 	return errors.Join(
-		validateInputFile(opts.From),
-		validateOutputFile(opts.To),
+		validateInput(opts.From),
+		validateOutput(opts.To),
 		validateOffset(opts.From, opts.Offset),
 		validateLimit(opts.Limit),
 		validateBlockSize(opts.BlockSize),
@@ -53,31 +53,31 @@ func validateFile(path string) error {
 	return err
 }
 
-func validateInputFile(path string) error {
-	if isStdin(path) {
+func validateInput(from string) error {
+	if from == stdin {
 		return nil
 	}
-	return validateFile(path)
+	return validateFile(from)
 }
 
-func validateOutputFile(path string) error {
-	if isStdout(path) {
+func validateOutput(to string) error {
+	if to == stdout {
 		return nil
 	}
-	if validateFile(path) == nil {
+	if validateFile(to) == nil {
 		return errors.New("the file already exists")
 	}
 	return nil
 }
 
-func validateOffset(path string, offset int64) error {
+func validateOffset(from string, offset int64) error {
 	if offset < 0 {
 		return errors.New("negative offset")
 	}
-	if isStdin(path) {
+	if from == stdin {
 		return nil
 	}
-	if fileSize(path) < offset {
+	if fileSize(from) < offset {
 		return errors.New("offset is greater than input file size")
 	}
 

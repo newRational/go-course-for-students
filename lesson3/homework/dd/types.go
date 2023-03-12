@@ -1,12 +1,5 @@
 package dd
 
-import "io"
-
-type ReadAtCloser interface {
-	io.ReaderAt
-	io.Closer
-}
-
 type Options struct {
 	From      string
 	To        string
