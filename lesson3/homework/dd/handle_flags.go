@@ -13,10 +13,13 @@ func ParseFlags() (*Options, error) {
 
 	DefineFlags(opts)
 	flag.Parse()
-	invalidFlags := ValidateFlags(opts)
-	adjustFlags(opts, invalidFlags)
+	err := ValidateFlags(opts)
 
-	return opts, invalidFlags
+	if err == nil {
+		adjustFlags(opts)
+	}
+
+	return opts, err
 }
 
 func DefineFlags(opts *Options) {
@@ -146,11 +149,7 @@ func validateNonContradictory(readConvTypes []string) error {
 
 // adjustFlags корректирует флаги для их более
 // удобного использования
-func adjustFlags(opts *Options, invalidFlags error) {
-	if invalidFlags != nil {
-		return
-	}
-
+func adjustFlags(opts *Options) {
 	if validateInput(opts.From) == nil {
 		configureLimit(opts)
 	}
