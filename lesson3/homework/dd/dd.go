@@ -62,6 +62,11 @@ func processLimit(r io.Reader, w io.Writer, opts *Options) error {
 	block := make([]byte, opts.BlockSize)
 	remainingBytesCount := opts.Limit
 
+	err := skipOffset(r, opts, block)
+	if err != nil {
+		return err
+	}
+
 	for remainingBytesCount > 0 {
 		readBytesCount, _ := r.Read(block)
 		if readBytesCount == 0 {
@@ -76,7 +81,7 @@ func processLimit(r io.Reader, w io.Writer, opts *Options) error {
 		}
 		convertedBytes := convert(block, opts.Conv)
 
-		if _, err := w.Write(convertedBytes); err != nil {
+		if _, err = w.Write(convertedBytes); err != nil {
 			return err
 		}
 		remainingBytesCount -= int64(readBytesCount)
@@ -87,6 +92,11 @@ func processLimit(r io.Reader, w io.Writer, opts *Options) error {
 
 func processNoLimit(r io.Reader, w io.Writer, opts *Options) error {
 	block := make([]byte, opts.BlockSize)
+
+	err := skipOffset(r, opts, block)
+	if err != nil {
+		return err
+	}
 
 	for {
 		readBytesCount, _ := r.Read(block)
@@ -100,11 +110,26 @@ func processNoLimit(r io.Reader, w io.Writer, opts *Options) error {
 
 		convertedBytes := convert(block, opts.Conv)
 
-		if _, err := w.Write(convertedBytes); err != nil {
+		if _, err = w.Write(convertedBytes); err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func skipOffset(r io.Reader, opts *Options, block []byte) error {
+	remainingBytesCount := opts.Offset
+
+	for remainingBytesCount > opts.BlockSize {
+		readBytesCount, _ := r.Read(block)
+		if readBytesCount == 0 {
+			return errors.New("offset is greater than input size")
+		}
+		remainingBytesCount -= int64(readBytesCount)
+	}
+
+	_, _ = r.Read(block[:remainingBytesCount])
 	return nil
 }
 
@@ -117,7 +142,13 @@ func processNoLimit(r io.Reader, w io.Writer, opts *Options) error {
 5. 	en, block-size = 4, offset = 0, limit = set, conv = upper_case		+
 6. 	en, block-size = 4, offset = 0, limit = set, conv = lower_case		+
 
-7. 	en, block-size = 4, offset = set, limit = no, conv = no
+7. 	en, block-size = 4, offset = set, limit = no, conv = no				+
+8. 	en, block-size = 4, offset = set, limit = no, conv = upper_case		+
+9. 	en, block-size = 4, offset = set, limit = no, conv = lower_case		+
+
+10.	en, block-size = 4, offset = set, limit = set, conv = no			+
+11.	en, block-size = 4, offset = set, limit = set, conv = upper_case	+
+12.	en, block-size = 4, offset = set, limit = set, conv = lower_case	+
 ---------------------------------------------------------------- */
 
 func convert(bytes []byte, conv *string) []byte {
