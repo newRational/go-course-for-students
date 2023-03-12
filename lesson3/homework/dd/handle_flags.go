@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ParseFlags() (*Options, []error) {
+func ParseFlags() (*Options, error) {
 	opts := &Options{}
 
 	DefineFlags(opts)
@@ -37,14 +37,15 @@ func DefineFlags(opts *Options) {
 		"By default original text is copied without changes")
 }
 
-func ValidateFlags(opts *Options) (report []error) {
-	report = appendIfErr(report, validateInputFile(opts.From))
-	report = appendIfErr(report, validateOutputFile(opts.To))
-	report = appendIfErr(report, validateOffset(opts.From, opts.Offset))
-	report = appendIfErr(report, validateLimit(opts.Limit))
-	report = appendIfErr(report, validateBlockSize(opts.BlockSize))
-	report = appendIfErr(report, validateConv(opts.Conv)...)
-	return
+func ValidateFlags(opts *Options) error {
+	return errors.Join(
+		validateInput(opts.From),
+		validateOutput(opts.To),
+		validateOffset(opts.From, opts.Offset),
+		validateLimit(opts.Limit),
+		validateBlockSize(opts.BlockSize),
+		validateConv(opts.Conv),
+	)
 }
 
 func validateFile(path string) error {
@@ -52,32 +53,31 @@ func validateFile(path string) error {
 	return err
 }
 
-func validateInputFile(path string) error {
-	if isStdin(path) {
+func validateInput(from string) error {
+	if from == stdin {
 		return nil
 	}
-	return validateFile(path)
+	return validateFile(from)
 }
 
-func validateOutputFile(path string) error {
-	if isStdout(path) {
+func validateOutput(to string) error {
+	if to == stdout {
 		return nil
 	}
-	if validateFile(path) == nil {
-		return errors.New("the file already exists")
+	if validateFile(to) == nil {
+		return os.ErrExist
 	}
 	return nil
 }
 
-func validateOffset(path string, offset int64) error {
+func validateOffset(from string, offset int64) error {
 	if offset < 0 {
 		return errors.New("negative offset")
 	}
-	if isStdin(path) {
+	if from == stdin {
 		return nil
 	}
-
-	if fileSize(path) < offset {
+	if validateInput(from) == nil && fileSize(from) < offset {
 		return errors.New("offset is greater than input file size")
 	}
 
@@ -100,28 +100,25 @@ func validateBlockSize(blockSize int64) error {
 	return nil
 }
 
-func validateConv(conv *string) []error {
-	var convErrors []error
+func validateConv(conv *string) error {
 	readConvTypes := strings.Split(*conv, ",")
 
-	convErrors = appendIfErr(convErrors, validateConvExistence(readConvTypes)...)
-	convErrors = appendIfErr(convErrors, validateNonContradictory(readConvTypes))
+	err := errors.Join(
+		validateConvExistence(readConvTypes),
+		validateNonContradictory(readConvTypes),
+	)
 
-	return convErrors
+	return err
 }
 
 // validateConvExistence проверяет считанные значения флага conv
 // на существование (на корректность ввода)
-func validateConvExistence(readConvTypes []string) []error {
-	var typeErrors []error
-	var res error
-
+func validateConvExistence(readConvTypes []string) error {
+	var errs []error
 	for _, v := range readConvTypes {
-		res = validateConvType(v)
-		typeErrors = appendIfErr(typeErrors, res)
+		errs = append(errs, validateConvType(v))
 	}
-
-	return typeErrors
+	return errors.Join(errs...)
 }
 
 func validateConvType(readConvType string) error {
@@ -147,23 +144,14 @@ func validateNonContradictory(readConvTypes []string) error {
 	return errors.New("invalid set of conv types")
 }
 
-func appendIfErr(errors []error, possibleErrors ...error) []error {
-	for _, e := range possibleErrors {
-		if e != nil {
-			errors = append(errors, e)
-		}
-	}
-	return errors
-}
-
 // adjustFlags корректирует флаги для их более
 // удобного использования
-func adjustFlags(opts *Options, invalidFlags []error) {
+func adjustFlags(opts *Options, invalidFlags error) {
 	if invalidFlags != nil {
 		return
 	}
 
-	if isNotStdin(opts.From) {
+	if opts.From != stdin && validateInput(opts.From) == nil {
 		configureLimit(opts)
 	}
 }
@@ -175,10 +163,6 @@ func configureLimit(opts *Options) {
 	} else {
 		opts.Limit = lib.MinInt64(opts.Limit, fileSize(opts.From))
 	}
-}
-
-func isNotStdin(from string) bool {
-	return from != stdin
 }
 
 func fileSize(path string) int64 {
