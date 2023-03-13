@@ -85,13 +85,17 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 			return err
 		}
 		remainingBytesCount -= int64(trimmedCount)
-		readBytes = correctBlock(r, b)
+		if readBytes, err = correctBlock(r, b); err != nil {
+			return err
+		}
 		trimFirst = true
 	}
 
 	for remainingBytesCount > 0 {
 		if !trimFirst {
-			readBytes = readBlock(r, block)
+			if readBytes, err = readBlock(r, block); err != nil {
+				return err
+			}
 		}
 		readBytesCount := len(readBytes)
 
@@ -141,23 +145,30 @@ func splitBlock(block []byte) ([]byte, []byte) {
 	return leftBytes, rightSpaceBytes
 }
 
-func readBlock(r io.Reader, block []byte) []byte {
-	readBytesCount, _ := r.Read(block)
+func readBlock(r io.Reader, block []byte) ([]byte, error) {
+	readBytesCount, err := r.Read(block)
+	if err != nil {
+		return nil, err
+	}
 
 	if readBytesCount < len(block) {
-		return block[:readBytesCount]
+		return block[:readBytesCount], nil
 	}
 
 	return correctBlock(r, block)
 }
 
-func correctBlock(r io.Reader, block []byte) []byte {
+func correctBlock(r io.Reader, block []byte) ([]byte, error) {
 	runeStart, count := findStartByteFromBack(block)
 	diff := runeLen(runeStart) - count
 
 	tmp := make([]byte, diff)
-	_, _ = r.Read(tmp)
-	return append(block, tmp...)
+	_, err := r.Read(tmp)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	return append(block, tmp...), nil
 }
 
 func findStartByteFromBack(block []byte) (byte, int) {
