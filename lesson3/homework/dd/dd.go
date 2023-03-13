@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-func Start(opts *Options) (err error) {
+func Start(opts *Options) error {
 	r, err := readCloser(opts.From)
 	if err != nil {
 		return err
@@ -21,11 +21,11 @@ func Start(opts *Options) (err error) {
 		return err
 	}
 
-	err = process(r, w, opts)
-
-	defer func() {
-		err = errors.Join(r.Close(), w.Close(), err)
+	defer func() error {
+		return errors.Join(r.Close(), w.Close(), err)
 	}()
+
+	err = process(r, w, opts)
 
 	return err
 }
@@ -209,12 +209,12 @@ func containsString(bunch *string, target string) bool {
 func skipOffset(r io.Reader, opts *Options, block []byte) error {
 	remainingBytesCount := opts.Offset
 
-	for remainingBytesCount >= opts.BlockSize {
+	for remainingBytesCount > 0 {
 		readBytesCount, err := r.Read(block)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			return err
 		}
-		if readBytesCount == 0 {
+		if int64(readBytesCount) < opts.BlockSize {
 			fmt.Fprintln(os.Stderr, "offset is greater than input size")
 			return errors.New("offset is greater than input size")
 		}
