@@ -151,8 +151,8 @@ func readBlock(r io.Reader, block []byte) ([]byte, error) {
 }
 
 func correctBlock(r io.Reader, block []byte) ([]byte, error) {
-	runeStart, count := findStartByteFromBack(block)
-	diff := runeLen(runeStart) - count
+	startByte, count := findStartByteFromBack(block)
+	diff := runeLen(startByte) - count
 
 	tmp := make([]byte, diff)
 	_, err := r.Read(tmp)
@@ -163,12 +163,12 @@ func correctBlock(r io.Reader, block []byte) ([]byte, error) {
 }
 
 func findStartByteFromBack(block []byte) (byte, int) {
-	i := 1
+	bytesFromBackCount := 1
 	l := len(block)
-	for !utf8.RuneStart(block[l-i]) {
-		i++
+	for !utf8.RuneStart(block[l-bytesFromBackCount]) {
+		bytesFromBackCount++
 	}
-	return block[l-i], i
+	return block[l-bytesFromBackCount], bytesFromBackCount
 }
 
 func runeLen(b byte) int {
@@ -245,13 +245,13 @@ func trimLeft(r io.Reader) ([]byte, int, error) {
 	if err != nil && err != io.EOF {
 		return nil, 0, err
 	}
-	n := 0
+	trimmedLeftBytesCount := 0
 	for unicode.IsSpace(rune(b[0])) {
 		_, err = r.Read(b)
 		if err != nil {
 			return nil, 0, err
 		}
-		n++
+		trimmedLeftBytesCount++
 	}
-	return b, n, nil
+	return b, trimmedLeftBytesCount, nil
 }
