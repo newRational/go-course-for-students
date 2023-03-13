@@ -59,9 +59,8 @@ func writeCloser(to string) (io.WriteCloser, error) {
 func process(r io.Reader, w io.Writer, opts *Options) error {
 	block := make([]byte, opts.BlockSize)
 	var trimmedRightBytes []byte
-	var flag bool
+	var trimFirst bool
 	var readBytes []byte
-	var cb []byte
 
 	doTrim := containsString(opts.Conv, TrimSpaces)
 
@@ -73,17 +72,18 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 	remainingBytesCount := opts.Limit
 
 	if doTrim {
-		b, n := trimLeft(r)
-		remainingBytesCount -= int64(n)
-		cb = correctBlock(r, b)
-		flag = true
+		b, trimmedCount, err := trimLeft(r)
+		if err != nil {
+			return err
+		}
+		remainingBytesCount -= int64(trimmedCount)
+		readBytes = correctBlock(r, b)
+		trimFirst = true
 	}
 
 	for remainingBytesCount > 0 {
-		if !flag {
+		if !trimFirst {
 			readBytes = readBlock(r, block)
-		} else {
-			readBytes = cb
 		}
 		readBytesCount := len(readBytes)
 
@@ -106,7 +106,7 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 		}
 
 		remainingBytesCount -= int64(readBytesCount)
-		flag = false
+		trimFirst = false
 	}
 
 	return nil
@@ -223,17 +223,19 @@ func skipOffset(r io.Reader, opts *Options, block []byte) error {
 	return nil
 }
 
-func trimLeft(r io.Reader) ([]byte, int) {
+func trimLeft(r io.Reader) ([]byte, int, error) {
 	b := make([]byte, 1)
-	r.Read(b)
+	_, err := r.Read(b)
+	if err != nil {
+		return nil, 0, err
+	}
 	n := 0
 	for unicode.IsSpace(rune(b[0])) {
-		r.Read(b)
+		_, err = r.Read(b)
+		if err != nil {
+			return nil, 0, err
+		}
 		n++
 	}
-	return b, n
-}
-
-func showBytes(msg string, bytes []byte) {
-	fmt.Println(msg+":", bytes, ":", "|"+string(bytes)+"|")
+	return b, n, nil
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -28,8 +27,6 @@ func TestBasicConversions(t *testing.T) {
 
 		err := cmd.Run()
 
-		fmt.Println("errors: ", stderr.String())
-
 		assert.NoError(t, err)
 		assert.Zero(t, stderr.Len(), stderr.String())
 		assert.Equal(t, "BA", stdout.String())
@@ -44,9 +41,6 @@ func TestBasicConversions(t *testing.T) {
 		cmd.Stderr = stderr
 
 		err := cmd.Run()
-
-		fmt.Println("stdout:", stdout.String())
-		fmt.Println("stderr:", stderr.String())
 
 		assert.NoError(t, err)
 		assert.Zero(t, stderr.Len(), stderr.String())
