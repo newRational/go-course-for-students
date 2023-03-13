@@ -1,5 +1,7 @@
 package dd
 
+import "math"
+
 type Options struct {
 	From      string
 	To        string
@@ -15,11 +17,11 @@ const (
 	stdout           = "stdout"
 	defaultOffset    = 0
 	defaultLimit     = NoLimit
-	defaultBlockSize = 4
+	defaultBlockSize = 1
 	defaultConvType  = ChangeNothing
 )
 
-const NoLimit = -1
+const NoLimit = math.MaxInt64
 
 // ConvTypes
 const (

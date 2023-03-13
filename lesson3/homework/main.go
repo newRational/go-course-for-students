@@ -14,7 +14,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = dd.Start(opts); err != nil {
+	err = dd.Start(opts)
+	if err != nil {
 		os.Exit(1)
 	}
 }
