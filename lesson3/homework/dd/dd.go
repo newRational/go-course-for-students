@@ -21,9 +21,17 @@ func Start(opts *Options) error {
 		return err
 	}
 
-	defer func() error {
-		return errors.Join(r.Close(), w.Close(), err)
-	}()
+	defer func(r io.ReadCloser, w io.WriteCloser) error {
+		err = r.Close()
+		if err != nil {
+			return err
+		}
+		err = w.Close()
+		if err != nil {
+			return err
+		}
+		return nil
+	}(r, w)
 
 	err = process(r, w, opts)
 
