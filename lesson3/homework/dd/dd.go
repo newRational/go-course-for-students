@@ -221,7 +221,10 @@ func skipOffset(r io.Reader, opts *Options, block []byte) error {
 	remainingBytesCount := opts.Offset
 
 	for remainingBytesCount >= opts.BlockSize {
-		readBytesCount, _ := r.Read(block)
+		readBytesCount, err := r.Read(block)
+		if err != nil && err != io.EOF {
+			return err
+		}
 		if readBytesCount == 0 {
 			fmt.Fprintln(os.Stderr, "offset is greater than input size")
 			return errors.New("offset is greater than input size")
@@ -229,7 +232,10 @@ func skipOffset(r io.Reader, opts *Options, block []byte) error {
 		remainingBytesCount -= int64(readBytesCount)
 	}
 
-	_, _ = r.Read(block[:remainingBytesCount])
+	_, err := r.Read(block[:remainingBytesCount])
+	if err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }
