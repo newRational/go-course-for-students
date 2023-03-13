@@ -104,7 +104,7 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 			readBytes, trimmedRightBytes = trimRight(readBytes, trimmedRightBytes)
 		}
 
-		if block != nil {
+		if readBytes != nil {
 			if _, err = w.Write(convert(readBytes, opts.Conv)); err != nil {
 				return err
 			}
