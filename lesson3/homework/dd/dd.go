@@ -59,9 +59,8 @@ func writeCloser(to string) (io.WriteCloser, error) {
 func process(r io.Reader, w io.Writer, opts *Options) error {
 	block := make([]byte, opts.BlockSize)
 	var trimmedRightBytes []byte
-	var flag bool
+	var trimmedLeft bool
 	var readBytes []byte
-
 	doTrim := containsString(opts.Conv, TrimSpaces)
 
 	err := skipOffset(r, opts, block)
@@ -72,20 +71,20 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 	remainingBytesCount := opts.Limit
 
 	if doTrim {
-		b, n, err := trimLeft(r)
+		firstNotSpaceByte, trimmedLeftBytesCount, err := trimLeft(r)
 		if err != nil {
 			return err
 		}
-		remainingBytesCount -= int64(n)
-		readBytes, err = correctBlock(r, b)
+		remainingBytesCount -= int64(trimmedLeftBytesCount)
+		readBytes, err = correctBlock(r, firstNotSpaceByte)
 		if err != nil {
 			return err
 		}
-		flag = true
+		trimmedLeft = true
 	}
 
 	for remainingBytesCount > 0 {
-		if !flag {
+		if !trimmedLeft {
 			if readBytes, err = readBlock(r, block); err != nil {
 				return err
 			}
@@ -111,7 +110,7 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 		}
 
 		remainingBytesCount -= int64(readBytesCount)
-		flag = false
+		trimmedLeft = false
 	}
 
 	return nil
