@@ -1,5 +1,7 @@
 package dd
 
+import "math"
+
 type Options struct {
 	From      string
 	To        string
@@ -19,7 +21,7 @@ const (
 	defaultConvType  = ChangeNothing
 )
 
-const NoLimit = -1
+const NoLimit = math.MaxInt64
 
 // ConvTypes
 const (

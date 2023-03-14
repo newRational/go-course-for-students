@@ -78,7 +78,7 @@ func validateOffset(from string, offset int64) error {
 		return nil
 	}
 	if validateInput(from) == nil && fileSize(from) < offset {
-		return errors.New("offset is greater than input file size")
+		return errors.New("offset is greater than input size")
 	}
 
 	return nil
@@ -159,7 +159,7 @@ func adjustFlags(opts *Options, invalidFlags error) {
 // configureLimit уточняет значение limit
 func configureLimit(opts *Options) {
 	if opts.Limit == NoLimit {
-		opts.Limit = fileSize(opts.From)
+		opts.Limit = fileSize(opts.From) - opts.Offset
 	} else {
 		opts.Limit = lib.MinInt64(opts.Limit, fileSize(opts.From))
 	}

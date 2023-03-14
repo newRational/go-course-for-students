@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"os"
 	"os/exec"
@@ -153,9 +152,6 @@ func TestBasicIntegration(t *testing.T) {
 		cmd.Stderr = stderr
 
 		err := cmd.Run()
-
-		fmt.Println("err: ", stderr.String())
-		fmt.Println("len(bytes): ", stdout.String())
 
 		assert.NoError(t, err)
 		assert.Zero(t, stderr.Len(), stderr.String())
