@@ -119,28 +119,36 @@ func correctBlock(r io.Reader, block []byte, remainingBytesCount int64) ([]byte,
 	if len(block) == 0 {
 		return block, 0, nil
 	}
-	startByte, count := findStartByteFromBack(block)
-	diff := runeLen(startByte) - count
+	_, startByteIndex, count := findStartByteFromBack(block)
 
-	if remainingBytesCount < int64(runeLen(startByte)) {
+	tmp := make([]byte, count)
+	copy(tmp, block[startByteIndex:])
+	b := make([]byte, 1)
+	var err error
+	diff := 0
+	for !utf8.Valid(tmp) && err == nil {
+		_, err = r.Read(b)
+		tmp = append(tmp, b...)
+		diff++
+	}
+
+	if remainingBytesCount < int64(count+diff) {
 		return block, remainingBytesCount, nil
 	}
 
-	tmp := make([]byte, diff)
-	_, err := r.Read(tmp)
 	if err != nil && err != io.EOF {
 		return nil, remainingBytesCount - int64(diff), err
 	}
-	return append(block, tmp...), remainingBytesCount - int64(diff), nil
+	return append(block, tmp[count:]...), remainingBytesCount - int64(diff), nil
 }
 
-func findStartByteFromBack(block []byte) (byte, int) {
+func findStartByteFromBack(block []byte) (byte, int, int) {
 	bytesFromBackCount := 1
 	l := len(block)
 	for !utf8.RuneStart(block[l-bytesFromBackCount]) {
 		bytesFromBackCount++
 	}
-	return block[l-bytesFromBackCount], bytesFromBackCount
+	return block[l-bytesFromBackCount], l - bytesFromBackCount, bytesFromBackCount
 }
 
 func runeLen(b byte) int {
