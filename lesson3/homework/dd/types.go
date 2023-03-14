@@ -49,7 +49,6 @@ func (c *ConvApplier) startAll(r io.Reader, block []byte) ([]byte, int, error) {
 		if v.convName() == "trim_left" {
 			continue
 		}
-		//fmt.Fprintln(os.Stderr, v.convName())
 		block, n, err = v.convert(r, block)
 		bytesCount += n
 		errs = errors.Join(err, errs)
@@ -109,11 +108,9 @@ func (lc *LowerCase) convName() string {
 }
 
 func (tl *TrimLeft) convert(r io.Reader, block []byte) ([]byte, int, error) {
-	//fmt.Println("\tcalled\t")
 	if !tl.mustApply {
 		return nil, 0, nil
 	}
-	//fmt.Println("\tcalled must\t")
 	tl.mustApply = false
 
 	b := make([]byte, 1)
@@ -128,8 +125,6 @@ func (tl *TrimLeft) convert(r io.Reader, block []byte) ([]byte, int, error) {
 		}
 		trimmedLeftBytesCount++
 	}
-
-	//fmt.Println("returned:", string(b))
 
 	return b, trimmedLeftBytesCount, nil
 }
@@ -185,7 +180,7 @@ const (
 	stdout           = "stdout"
 	defaultOffset    = 0
 	defaultLimit     = NoLimit
-	defaultBlockSize = 1
+	defaultBlockSize = 2
 	defaultConvType  = changeNothing
 )
 

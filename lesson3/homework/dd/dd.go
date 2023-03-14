@@ -80,10 +80,8 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 		//fmt.Println("readBytes:", readBytes, ":", string(readBytes))
 
 		readBytes = append(startByte, readBytes...)
-		//fmt.Println("readBytes 2:", readBytes, ":", string(readBytes))
 
 		readBytes, _ = correctBlock(r, readBytes)
-		//fmt.Println("readBytes 3:", readBytes, ":", string(readBytes))
 
 		if readBytesCount == 0 {
 			return nil
@@ -93,8 +91,7 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 			readBytes = readBytes[:opts.Limit]
 		}
 
-		_, count, _ := ca.startAll(r, readBytes)
-		//fmt.Println("readBytes:", readBytes, ":", string(readBytes))
+		readBytes, count, _ := ca.startAll(r, readBytes)
 
 		_, err = w.Write(readBytes)
 		if err != nil {
@@ -102,7 +99,6 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 		}
 
 		opts.Limit -= int64(readBytesCount + trimmedCount + count)
-		//fmt.Println("\tchecked\n")
 	}
 
 	return nil
