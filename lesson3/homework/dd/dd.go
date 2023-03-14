@@ -69,21 +69,17 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 		if err != nil {
 			return err
 		}
-		readBytes, err = readBlock(r, block)
+		readBytes, err = readBlock(r, block, opts.Limit)
 		readBytesCount := len(readBytes)
 		if err != nil {
 			return err
 		}
 
-		//fmt.Println("startByte:", startByte, ":", string(startByte))
-		//fmt.Println("trimmedCount:", trimmedCount)
-		//fmt.Println("readBytes:", readBytes, ":", string(readBytes))
-
 		readBytes = append(startByte, readBytes...)
 
-		readBytes, _ = correctBlock(r, readBytes)
+		readBytes, opts.Limit, _ = correctBlock(r, readBytes, opts.Limit)
 
-		if readBytesCount == 0 {
+		if readBytesCount == 0 || opts.Limit < 0 {
 			return nil
 		}
 
@@ -99,12 +95,13 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 		}
 
 		opts.Limit -= int64(readBytesCount + trimmedCount + count)
+
 	}
 
 	return nil
 }
 
-func readBlock(r io.Reader, block []byte) ([]byte, error) {
+func readBlock(r io.Reader, block []byte, remainingBytesCount int64) ([]byte, error) {
 	readBytesCount, err := r.Read(block)
 
 	if err != nil && err != io.EOF {
@@ -115,22 +112,26 @@ func readBlock(r io.Reader, block []byte) ([]byte, error) {
 		return block[:readBytesCount], nil
 	}
 
-	return correctBlock(r, block)
+	return block, nil
 }
 
-func correctBlock(r io.Reader, block []byte) ([]byte, error) {
+func correctBlock(r io.Reader, block []byte, remainingBytesCount int64) ([]byte, int64, error) {
 	if len(block) == 0 {
-		return block, nil
+		return block, 0, nil
 	}
 	startByte, count := findStartByteFromBack(block)
 	diff := runeLen(startByte) - count
 
+	if remainingBytesCount < int64(runeLen(startByte)) {
+		return block, remainingBytesCount, nil
+	}
+
 	tmp := make([]byte, diff)
 	_, err := r.Read(tmp)
 	if err != nil && err != io.EOF {
-		return nil, err
+		return nil, remainingBytesCount - int64(diff), err
 	}
-	return append(block, tmp...), nil
+	return append(block, tmp...), remainingBytesCount - int64(diff), nil
 }
 
 func findStartByteFromBack(block []byte) (byte, int) {
