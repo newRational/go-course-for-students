@@ -77,7 +77,10 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 
 		readBytes = append(startByte, readBytes...)
 
-		readBytes, opts.Limit, _ = correctBlock(r, readBytes, opts.Limit)
+		readBytes, opts.Limit, err = correctBlock(r, readBytes, opts.Limit)
+		if err != nil {
+			return err
+		}
 
 		if readBytesCount == 0 || opts.Limit < 0 {
 			return nil
@@ -87,7 +90,10 @@ func process(r io.Reader, w io.Writer, opts *Options) error {
 			readBytes = readBytes[:opts.Limit]
 		}
 
-		readBytes, count, _ := ca.startAll(r, readBytes)
+		readBytes, count, err := ca.startAll(r, readBytes)
+		if err != nil {
+			return err
+		}
 
 		_, err = w.Write(readBytes)
 		if err != nil {
