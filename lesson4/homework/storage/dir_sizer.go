@@ -33,7 +33,7 @@ func NewSizer() DirSizer {
 }
 
 func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
-	res := Result{}
+	var res Result
 
 	if err := ctx.Err(); err != nil {
 		return res, err
@@ -47,7 +47,7 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	for _, file := range files {
 		size, err := file.Stat(ctx)
 		if err != nil {
-			return Result{}, err
+			return res, err
 		}
 		res.Size += size
 		res.Count++
@@ -71,7 +71,6 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	}
 
 	wg.Wait()
-
 	close(chDirsErr)
 	close(chDirsRes)
 
@@ -90,7 +89,7 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 }
 
 func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, chErr chan<- error) {
-	res := Result{}
+	var res Result
 
 	if err := ctx.Err(); err != nil {
 		chErr <- err
