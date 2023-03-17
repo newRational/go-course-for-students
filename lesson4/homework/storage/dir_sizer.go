@@ -32,17 +32,46 @@ func NewSizer() DirSizer {
 	return &sizer{}
 }
 
-func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
-	var res Result
+func (r *Result) add(other Result) {
+	r.Size += other.Size
+	r.Count += other.Count
+}
 
-	if err := ctx.Err(); err != nil {
-		return res, err
-	}
+func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
+	defer func() {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			err = ctxErr
+		}
+	}()
 
 	dirs, files, err := d.Ls(ctx)
 	if err != nil {
 		return res, err
 	}
+
+	filesRes, err := a.processFiles(ctx, files)
+	if err != nil {
+		return res, err
+	}
+	res.add(filesRes)
+
+	if len(dirs) != 0 {
+		dirsRes, err := a.processDirsAsync(ctx, dirs)
+		if err != nil {
+			return res, err
+		}
+		res.add(dirsRes)
+	}
+
+	return res, nil
+}
+
+func (a *sizer) processFiles(ctx context.Context, files []File) (res Result, err error) {
+	defer func() {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			err = ctxErr
+		}
+	}()
 
 	for _, file := range files {
 		size, err := file.Stat(ctx)
@@ -53,12 +82,18 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 		res.Count++
 	}
 
-	if len(dirs) == 0 {
-		return res, nil
-	}
+	return res, nil
+}
 
-	chDirsErr := make(chan error, len(dirs))
-	chDirsRes := make(chan Result, len(dirs))
+func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, err error) {
+	defer func() {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			err = ctxErr
+		}
+	}()
+
+	chErr := make(chan error, len(dirs))
+	chRes := make(chan Result, len(dirs))
 
 	var wg sync.WaitGroup
 	wg.Add(len(dirs))
@@ -66,21 +101,21 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	for _, dir := range dirs {
 		go func(dir Dir) {
 			defer wg.Done()
-			a.processDir(ctx, dir, chDirsRes, chDirsErr)
+			a.processDir(ctx, dir, chRes, chErr)
 		}(dir)
 	}
 
 	wg.Wait()
-	close(chDirsErr)
-	close(chDirsRes)
+	close(chErr)
+	close(chRes)
 
-	for e := range chDirsErr {
+	for e := range chErr {
 		if e != nil {
 			return res, e
 		}
 	}
 
-	for r := range chDirsRes {
+	for r := range chRes {
 		res.Size += r.Size
 		res.Count += r.Count
 	}
@@ -89,13 +124,13 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 }
 
 func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, chErr chan<- error) {
-	var res Result
+	defer func() {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			chErr <- ctxErr
+		}
+	}()
 
-	if err := ctx.Err(); err != nil {
-		chErr <- err
-		chRes <- res
-		return
-	}
+	var res Result
 
 	dirRes, err := a.Size(ctx, dir)
 	if err != nil {
