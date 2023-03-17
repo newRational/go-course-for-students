@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
-	"unicode"
 	"unicode/utf8"
 )
 
@@ -58,87 +56,60 @@ func writeCloser(to string) (io.WriteCloser, error) {
 
 func process(r io.Reader, w io.Writer, opts *Options) error {
 	block := make([]byte, opts.BlockSize)
-	var trimmedRightBytes []byte
-	var trimmedLeft bool
+	ca := newConvApplierConversions(opts.Conv)
 	var readBytes []byte
-	doTrim := containsString(opts.Conv, TrimSpaces)
 
 	err := skipOffset(r, opts, block)
 	if err != nil {
 		return err
 	}
 
-	remainingBytesCount := opts.Limit
-
-	if doTrim {
-		firstNotSpaceByte, trimmedLeftBytesCount, err := trimLeft(r)
+	for opts.Limit > 0 {
+		startByte, trimmedCount, err := ca.startSingle(r, "trim_left", block)
 		if err != nil {
 			return err
 		}
-		remainingBytesCount -= int64(trimmedLeftBytesCount)
-		readBytes, err = correctBlock(r, firstNotSpaceByte)
-		if err != nil {
-			return err
-		}
-		trimmedLeft = true
-	}
-
-	for remainingBytesCount > 0 {
-		if !trimmedLeft {
-			if readBytes, err = readBlock(r, block); err != nil {
-				return err
-			}
-		}
+		readBytes, err = readBlock(r, block)
 		readBytesCount := len(readBytes)
+		if err != nil {
+			return err
+		}
 
-		if readBytesCount == 0 {
+		readBytes = append(startByte, readBytes...)
+
+		readBytes, opts.Limit, err = correctBlock(r, readBytes, opts.Limit)
+		if err != nil {
+			return err
+		}
+
+		if readBytesCount == 0 || opts.Limit < 0 {
 			return nil
 		}
 
-		if remainingBytesCount < opts.BlockSize {
-			readBytes = readBytes[:remainingBytesCount]
+		if opts.Limit < opts.BlockSize {
+			readBytes = readBytes[:opts.Limit]
 		}
 
-		if doTrim {
-			readBytes, trimmedRightBytes = trimRight(readBytes, trimmedRightBytes)
+		readBytes, count, err := ca.startAll(r, readBytes)
+		if err != nil {
+			return err
 		}
 
-		if readBytes != nil {
-			if _, err = w.Write(convert(readBytes, opts.Conv)); err != nil {
-				return err
-			}
+		_, err = w.Write(readBytes)
+		if err != nil {
+			return err
 		}
 
-		remainingBytesCount -= int64(readBytesCount)
-		trimmedLeft = false
+		opts.Limit -= int64(readBytesCount + trimmedCount + count)
+
 	}
 
 	return nil
 }
 
-func trimRight(block, previousTrimmedBytes []byte) (bytesToWrite, allTrimmedBytes []byte) {
-	leftBytes, rightSpaceBytes := splitBlock(block)
-
-	if len(leftBytes) == 0 {
-		allTrimmedBytes = append(previousTrimmedBytes, rightSpaceBytes...)
-	} else {
-		bytesToWrite = append(previousTrimmedBytes, leftBytes...)
-		allTrimmedBytes = make([]byte, len(rightSpaceBytes))
-		copy(allTrimmedBytes, rightSpaceBytes)
-	}
-
-	return
-}
-
-func splitBlock(block []byte) ([]byte, []byte) {
-	leftBytes := []byte(strings.TrimRightFunc(string(block), unicode.IsSpace))
-	rightSpaceBytes := block[len(leftBytes):]
-
-	return leftBytes, rightSpaceBytes
-}
-
 func readBlock(r io.Reader, block []byte) ([]byte, error) {
 	readBytesCount, err := r.Read(block)
+
 	if err != nil && err != io.EOF {
 		return nil, err
 	}
@@ -147,73 +118,43 @@ func readBlock(r io.Reader, block []byte) ([]byte, error) {
 		return block[:readBytesCount], nil
 	}
 
-	return correctBlock(r, block)
+	return block, nil
 }
 
-func correctBlock(r io.Reader, block []byte) ([]byte, error) {
-	startByte, count := findStartByteFromBack(block)
-	diff := runeLen(startByte) - count
-
-	tmp := make([]byte, diff)
-	_, err := r.Read(tmp)
-	if err != nil && err != io.EOF {
-		return nil, err
+func correctBlock(r io.Reader, block []byte, remainingBytesCount int64) ([]byte, int64, error) {
+	if len(block) == 0 {
+		return block, 0, nil
 	}
-	return append(block, tmp...), nil
+	_, startByteIndex, count := findStartByteFromBack(block)
+
+	tmp := make([]byte, count)
+	copy(tmp, block[startByteIndex:])
+	b := make([]byte, 1)
+	var err error
+	diff := 0
+	for !utf8.Valid(tmp) && err == nil {
+		_, err = r.Read(b)
+		tmp = append(tmp, b...)
+		diff++
+	}
+
+	if remainingBytesCount < int64(count+diff) {
+		return block, remainingBytesCount, nil
+	}
+
+	if err != nil && err != io.EOF {
+		return nil, remainingBytesCount - int64(diff), err
+	}
+	return append(block, tmp[count:]...), remainingBytesCount - int64(diff), nil
 }
 
-func findStartByteFromBack(block []byte) (byte, int) {
+func findStartByteFromBack(block []byte) (byte, int, int) {
 	bytesFromBackCount := 1
 	l := len(block)
 	for !utf8.RuneStart(block[l-bytesFromBackCount]) {
 		bytesFromBackCount++
 	}
-	return block[l-bytesFromBackCount], bytesFromBackCount
-}
-
-func runeLen(b byte) int {
-	if b&0b11110000 == 0b11110000 {
-		return 4
-	} else if b&0b11100000 == 0b11100000 {
-		return 3
-	} else if b&0b11000000 == 0b11000000 {
-		return 2
-	} else if b&0b10000000 == 0b10000000 {
-		return 0
-	} else {
-		return 1
-	}
-}
-
-func convert(bytes []byte, conv *string) []byte {
-	str := string(bytes)
-	readConvTypes := strings.Split(*conv, ",")
-
-	for _, v := range readConvTypes {
-		str = applyConv(str, v)
-	}
-
-	return []byte(str)
-}
-
-func applyConv(str, conv string) string {
-	switch conv {
-	case UpperCase:
-		str = strings.ToUpper(str)
-	case LowerCase:
-		str = strings.ToLower(str)
-	}
-	return str
-}
-
-func containsString(bunch *string, target string) bool {
-	content := strings.Split(*bunch, ",")
-	for _, v := range content {
-		if target == v {
-			return true
-		}
-	}
-	return false
+	return block[l-bytesFromBackCount], l - bytesFromBackCount, bytesFromBackCount
 }
 
 func skipOffset(r io.Reader, opts *Options, block []byte) error {
@@ -237,21 +178,4 @@ func skipOffset(r io.Reader, opts *Options, block []byte) error {
 	}
 
 	return nil
-}
-
-func trimLeft(r io.Reader) ([]byte, int, error) {
-	b := make([]byte, 1)
-	_, err := r.Read(b)
-	if err != nil && err != io.EOF {
-		return nil, 0, err
-	}
-	trimmedLeftBytesCount := 0
-	for unicode.IsSpace(rune(b[0])) {
-		_, err = r.Read(b)
-		if err != nil {
-			return nil, 0, err
-		}
-		trimmedLeftBytesCount++
-	}
-	return b, trimmedLeftBytesCount, nil
 }

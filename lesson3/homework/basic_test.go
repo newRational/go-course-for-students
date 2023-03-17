@@ -80,7 +80,7 @@ func TestBasicIntegration(t *testing.T) {
 	})
 
 	t.Run("ok with unlimited stdin input, limit option and stdout result", func(t *testing.T) {
-		limit := 1000000
+		limit := 1000000 // 1000000
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 		defer cancel()
 		cmd = exec.CommandContext(ctx, binPath, "-limit", strconv.Itoa(limit))

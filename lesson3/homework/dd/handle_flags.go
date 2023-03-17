@@ -123,7 +123,7 @@ func validateConvExistence(readConvTypes []string) error {
 
 func validateConvType(readConvType string) error {
 	switch readConvType {
-	case ChangeNothing, UpperCase, LowerCase, TrimSpaces:
+	case changeNothing, upperCase, lowerCase, trimSpaces:
 		return nil
 	}
 	return errors.New(readConvType + ": unexpected conv type")
@@ -137,7 +137,7 @@ func validateNonContradictory(readConvTypes []string) error {
 	case 1, 0:
 		return nil
 	case 2:
-		if readConvTypes[0] == TrimSpaces || readConvTypes[1] == TrimSpaces {
+		if readConvTypes[0] == trimSpaces || readConvTypes[1] == trimSpaces {
 			return nil
 		}
 	}
