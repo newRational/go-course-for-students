@@ -40,7 +40,7 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 
 	dirs, files, err := d.Ls(ctx)
 	if err != nil {
-		return Result{}, err
+		return res, err
 	}
 
 	for _, file := range files {
