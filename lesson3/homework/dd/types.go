@@ -46,7 +46,7 @@ func (c *ConvApplier) startAll(r io.Reader, block []byte) ([]byte, int, error) {
 	var n int
 
 	for _, v := range c.conversions {
-		if v.convName() == "trim_left" {
+		if v.name() == "trim_left" {
 			continue
 		}
 		block, n, err = v.convert(r, block)
@@ -70,7 +70,7 @@ func (c *ConvApplier) add(name string, conv Converter) {
 
 type Converter interface {
 	convert(r io.Reader, block []byte) ([]byte, int, error)
-	convName() string
+	name() string
 }
 
 type UpperCase struct {
@@ -93,7 +93,7 @@ func (uc *UpperCase) convert(_ io.Reader, block []byte) ([]byte, int, error) {
 	return []byte(str), 0, nil
 }
 
-func (uc *UpperCase) convName() string {
+func (uc *UpperCase) name() string {
 	return upperCase
 }
 
@@ -103,11 +103,11 @@ func (lc *LowerCase) convert(_ io.Reader, block []byte) ([]byte, int, error) {
 	return []byte(str), 0, nil
 }
 
-func (lc *LowerCase) convName() string {
+func (lc *LowerCase) name() string {
 	return lowerCase
 }
 
-func (tl *TrimLeft) convert(r io.Reader, block []byte) ([]byte, int, error) {
+func (tl *TrimLeft) convert(r io.Reader, _ []byte) ([]byte, int, error) {
 	if !tl.mustApply {
 		return nil, 0, nil
 	}
@@ -129,7 +129,7 @@ func (tl *TrimLeft) convert(r io.Reader, block []byte) ([]byte, int, error) {
 	return b, trimmedLeftBytesCount, nil
 }
 
-func (tl *TrimLeft) convName() string {
+func (tl *TrimLeft) name() string {
 	return "trim_left"
 }
 
@@ -154,7 +154,7 @@ func (tr *TrimRight) convert(_ io.Reader, block []byte) ([]byte, int, error) {
 	return bytesToWrite, rightSpaceBytesCount, nil
 }
 
-func (tr *TrimRight) convName() string {
+func (tr *TrimRight) name() string {
 	return "trim_right"
 }
 
