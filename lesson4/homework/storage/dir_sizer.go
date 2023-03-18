@@ -92,6 +92,7 @@ func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, e
 		}
 	}()
 
+	chCtxErr := make(chan error, 1)
 	chErr := make(chan error, len(dirs))
 	chRes := make(chan Result, len(dirs))
 
@@ -99,14 +100,18 @@ func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, e
 	wg.Add(len(dirs))
 
 	for _, dir := range dirs {
-		f := closure(ctx, a, chRes, chErr, dir, &wg)
+		f := closure(ctx, a, dir, &wg, chRes, chErr, chCtxErr)
 		a.wp.Submit(f)
 	}
 
 	wg.Wait()
-
+	close(chCtxErr)
 	close(chErr)
 	close(chRes)
+
+	if ctxErr := <-chCtxErr; err != nil {
+		return res, ctxErr
+	}
 
 	for e := range chErr {
 		if e != nil {
@@ -122,10 +127,10 @@ func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, e
 	return res, nil
 }
 
-func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, chErr chan<- error) {
+func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, chErr, chCtxErr chan<- error) {
 	defer func() {
-		if ctxErr := ctx.Err(); ctxErr != nil && len(chErr) == 0 {
-			chErr <- ctxErr
+		if ctxErr := ctx.Err(); ctxErr != nil && len(chCtxErr) == 0 {
+			chCtxErr <- ctxErr
 		}
 	}()
 
@@ -146,9 +151,9 @@ func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, ch
 }
 
 // closure returns closure for WorkerPool's Submit method
-func closure(ctx context.Context, a *sizer, chRes chan<- Result, chErr chan<- error, dir Dir, wg *sync.WaitGroup) func() {
+func closure(ctx context.Context, a *sizer, dir Dir, wg *sync.WaitGroup, chRes chan<- Result, chErr, chCtxErr chan<- error) func() {
 	return func() {
 		defer wg.Done()
-		a.processDir(ctx, dir, chRes, chErr)
+		a.processDir(ctx, dir, chRes, chErr, chCtxErr)
 	}
 }
