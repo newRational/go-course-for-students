@@ -109,13 +109,13 @@ func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, e
 	close(chErr)
 	close(chRes)
 
-	if ctxErr := <-chCtxErr; err != nil {
-		return res, ctxErr
+	if err := <-chCtxErr; err != nil {
+		return res, err
 	}
 
-	for e := range chErr {
-		if e != nil {
-			return res, e
+	for err := range chErr {
+		if err != nil {
+			return res, err
 		}
 	}
 
