@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/gammazero/workerpool"
 	"sync"
 )
 
@@ -21,15 +22,14 @@ type DirSizer interface {
 
 // sizer implement the DirSizer interface
 type sizer struct {
-	// maxWorkersCount number of workers for asynchronous run
-	//maxWorkersCount int
-
-	// TODO: add other fields as you wish
+	wp *workerpool.WorkerPool
 }
 
 // NewSizer returns new DirSizer instance
 func NewSizer() DirSizer {
-	return &sizer{}
+	return &sizer{
+		wp: workerpool.New(4),
+	}
 }
 
 func (r *Result) add(other Result) {
@@ -49,12 +49,6 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 		return res, err
 	}
 
-	filesRes, err := a.processFiles(ctx, files)
-	if err != nil {
-		return res, err
-	}
-	res.add(filesRes)
-
 	if len(dirs) != 0 {
 		dirsRes, err := a.processDirsAsync(ctx, dirs)
 		if err != nil {
@@ -62,6 +56,12 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 		}
 		res.add(dirsRes)
 	}
+
+	filesRes, err := a.processFiles(ctx, files)
+	if err != nil {
+		return res, err
+	}
+	res.add(filesRes)
 
 	return res, nil
 }
@@ -99,13 +99,12 @@ func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, e
 	wg.Add(len(dirs))
 
 	for _, dir := range dirs {
-		go func(dir Dir) {
-			defer wg.Done()
-			a.processDir(ctx, dir, chRes, chErr)
-		}(dir)
+		f := closure(ctx, a, chRes, chErr, dir, &wg)
+		a.wp.Submit(f)
 	}
 
 	wg.Wait()
+
 	close(chErr)
 	close(chRes)
 
@@ -125,7 +124,7 @@ func (a *sizer) processDirsAsync(ctx context.Context, dirs []Dir) (res Result, e
 
 func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, chErr chan<- error) {
 	defer func() {
-		if ctxErr := ctx.Err(); ctxErr != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil && len(chErr) == 0 {
 			chErr <- ctxErr
 		}
 	}()
@@ -133,6 +132,7 @@ func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, ch
 	var res Result
 
 	dirRes, err := a.Size(ctx, dir)
+
 	if err != nil {
 		chErr <- err
 		chRes <- res
@@ -142,6 +142,13 @@ func (a *sizer) processDir(ctx context.Context, dir Dir, chRes chan<- Result, ch
 	res.Size += dirRes.Size
 	res.Count += dirRes.Count
 
-	chErr <- nil
 	chRes <- res
+}
+
+// closure returns closure for WorkerPool's Submit method
+func closure(ctx context.Context, a *sizer, chRes chan<- Result, chErr chan<- error, dir Dir, wg *sync.WaitGroup) func() {
+	return func() {
+		defer wg.Done()
+		a.processDir(ctx, dir, chRes, chErr)
+	}
 }

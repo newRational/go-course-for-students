@@ -115,9 +115,9 @@ func getDummySet() Dir {
 				NewDummyFile("/root/foo/baz/f11.txt", 76504),
 				NewDummyFile("/root/foo/baz/f12.txt", 252446),
 			}),
-			NewDummyDir("/root/foo/baz", 690*time.Millisecond, nil, []File{
-				NewDummyFile("/root/foo/baz/f13.txt", 3455),
-				NewDummyFile("/root/foo/baz/f14.txt", 121223),
+			NewDummyDir("/root/foo/bac", 690*time.Millisecond, nil, []File{
+				NewDummyFile("/root/foo/bac/f13.txt", 3455),
+				NewDummyFile("/root/foo/bac/f14.txt", 121223),
 			}),
 		}, []File{
 			NewDummyFile("/root/foo/f5.txt", 735635),
