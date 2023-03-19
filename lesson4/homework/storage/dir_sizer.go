@@ -34,8 +34,6 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 	}()
 
 	dirs, files, err := d.Ls(ctx)
-	<-a.busyWorkers
-
 	if err != nil {
 		return res, err
 	}
@@ -48,6 +46,7 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 		res.Size += size
 		res.Count++
 	}
+	<-a.busyWorkers
 
 	chRes := make(chan Result, len(dirs))
 	chErr := make(chan error, len(dirs))
