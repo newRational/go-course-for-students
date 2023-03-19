@@ -15,11 +15,10 @@ type DirSizer interface {
 }
 
 type sizer struct {
-	maxWorkersCount int
 }
 
 func NewSizer() DirSizer {
-	return &sizer{maxWorkersCount: 1}
+	return &sizer{}
 }
 
 func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
