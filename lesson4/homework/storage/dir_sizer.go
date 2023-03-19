@@ -24,7 +24,7 @@ func NewSizer() DirSizer {
 
 func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 	defer func() {
-		if err := ctx.Err(); err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
 			err = ctx.Err()
 		}
 	}()
@@ -74,5 +74,5 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 		res.Count += r.Count
 	}
 
-	return res, nil
+	return
 }
