@@ -56,16 +56,15 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 
 	for _, dir := range dirs {
 		a.busyWorkers <- struct{}{}
-		go func(chRes chan<- Result, chErr chan<- error, dir Dir) {
+		go func(dir Dir) {
 			defer wg.Done()
 			res, err := a.Size(ctx, dir)
 			chRes <- res
 			chErr <- err
-		}(chRes, chErr, dir)
+		}(dir)
 	}
 
 	wg.Wait()
-
 	close(chRes)
 	close(chErr)
 
