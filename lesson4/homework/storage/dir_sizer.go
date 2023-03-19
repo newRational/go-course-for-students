@@ -2,41 +2,32 @@ package storage
 
 import (
 	"context"
+	"sync"
 )
 
-// Result represents the Size function result
 type Result struct {
-	// Total Size of File objects
-	Size int64
-	// Count is a count of File objects processed
+	Size  int64
 	Count int64
 }
 
 type DirSizer interface {
-	// Size calculate a size of given Dir, receive a ctx and the root Dir instance
-	// will return Result or error if happened
 	Size(ctx context.Context, d Dir) (Result, error)
 }
 
-// sizer implement the DirSizer interface
 type sizer struct {
-	// maxWorkersCount number of workers for asynchronous run
 	maxWorkersCount int
-
-	// TODO: add other fields as you wish
 }
 
-// NewSizer returns new DirSizer instance
 func NewSizer() DirSizer {
-	return &sizer{}
+	return &sizer{maxWorkersCount: 1}
 }
 
-func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
-	res := Result{}
-
-	if err := ctx.Err(); err != nil {
-		return res, err
-	}
+func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
+	defer func() {
+		if err := ctx.Err(); err != nil {
+			err = ctx.Err()
+		}
+	}()
 
 	dirs, files, err := d.Ls(ctx)
 	if err != nil {
@@ -46,19 +37,41 @@ func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	for _, file := range files {
 		size, err := file.Stat(ctx)
 		if err != nil {
-			return Result{}, err
+			return res, err
 		}
 		res.Size += size
 		res.Count++
 	}
 
+	chRes := make(chan Result, len(dirs))
+	chErr := make(chan error, len(dirs))
+
+	var wg sync.WaitGroup
+	wg.Add(len(dirs))
+
 	for _, dir := range dirs {
-		dirRes, err := a.Size(ctx, dir)
+		go func(chRes chan<- Result, chErr chan<- error, dir Dir) {
+			defer wg.Done()
+			res, err := a.Size(ctx, dir)
+			chRes <- res
+			chErr <- err
+		}(chRes, chErr, dir)
+	}
+
+	wg.Wait()
+
+	close(chRes)
+	close(chErr)
+
+	for err := range chErr {
 		if err != nil {
-			return Result{}, err
+			return res, err
 		}
-		res.Size += dirRes.Size
-		res.Count += dirRes.Count
+	}
+
+	for r := range chRes {
+		res.Size += r.Size
+		res.Count += r.Count
 	}
 
 	return res, nil
