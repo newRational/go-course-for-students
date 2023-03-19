@@ -15,10 +15,15 @@ type DirSizer interface {
 }
 
 type sizer struct {
+	busyWorkers chan struct{}
 }
 
 func NewSizer() DirSizer {
-	return &sizer{}
+	s := &sizer{
+		busyWorkers: make(chan struct{}, 3),
+	}
+	s.busyWorkers <- struct{}{}
+	return s
 }
 
 func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
@@ -29,6 +34,8 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 	}()
 
 	dirs, files, err := d.Ls(ctx)
+	<-a.busyWorkers
+
 	if err != nil {
 		return res, err
 	}
@@ -49,6 +56,7 @@ func (a *sizer) Size(ctx context.Context, d Dir) (res Result, err error) {
 	wg.Add(len(dirs))
 
 	for _, dir := range dirs {
+		a.busyWorkers <- struct{}{}
 		go func(chRes chan<- Result, chErr chan<- error, dir Dir) {
 			defer wg.Done()
 			res, err := a.Size(ctx, dir)
