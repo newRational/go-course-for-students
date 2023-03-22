@@ -12,28 +12,27 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(ctx context.Context, in In, stages ...Stage) Out {
-	last := make(chan any)
+	o := make(chan any)
 
-	o := stages[0](in)
-	for i := 1; i < len(stages); i++ {
-		o = stages[i](o)
+	for _, s := range stages {
+		in = s(in)
 	}
 
 	go func() {
-		defer close(last)
+		defer close(o)
 		ok := true
 		var data any
 		for ok && ctx.Err() == nil {
 			select {
-			case data, ok = <-o:
+			case data, ok = <-in:
 				if !ok {
 					break
 				}
-				last <- data
+				o <- data
 			default:
 			}
 		}
 	}()
 
-	return last
+	return o
 }
