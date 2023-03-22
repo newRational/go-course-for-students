@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -131,7 +130,6 @@ func TestPipeline(t *testing.T) {
 					return
 				default:
 					in <- i
-					fmt.Println("added")
 					i++
 				}
 			}
@@ -141,7 +139,6 @@ func TestPipeline(t *testing.T) {
 		start := time.Now()
 		for s := range ExecutePipeline(ctx, in, stages...) {
 			result = append(result, s.(string))
-			fmt.Println("here")
 		}
 		elapsed := time.Since(start)
 
