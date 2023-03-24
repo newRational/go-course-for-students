@@ -20,16 +20,15 @@ func ExecutePipeline(ctx context.Context, in In, stages ...Stage) Out {
 
 	go func() {
 		defer close(out)
-		ok := true
-		var data any
-		for ok && ctx.Err() == nil {
+		for {
 			select {
-			case data, ok = <-in:
+			case data, ok := <-in:
 				if !ok {
-					break
+					return
 				}
 				out <- data
-			default:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
