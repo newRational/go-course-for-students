@@ -55,12 +55,12 @@ func Validate(val any) error {
 	return err
 }
 
-func validate(f reflect.StructField, v reflect.Value) (err error) {
+func validate(f reflect.StructField, v reflect.Value) error {
 	switch v.Interface().(type) {
 	case int:
-		err = validateInt(f, int(v.Int()))
+		return validateInt(f, int(v.Int()))
 	case string:
-		err = validateStr(f, v.String())
+		return validateStr(f, v.String())
 	case []int:
 		for _, n := range v.Interface().([]int) {
 			if e := validateInt(f, n); e != nil {
@@ -74,7 +74,7 @@ func validate(f reflect.StructField, v reflect.Value) (err error) {
 			}
 		}
 	}
-	return
+	return nil
 }
 
 func validateInt(f reflect.StructField, num int) error {
