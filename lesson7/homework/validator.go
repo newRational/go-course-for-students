@@ -56,19 +56,30 @@ func Validate(val any) error {
 }
 
 func validate(f reflect.StructField, v reflect.Value) (err error) {
-	switch f.Type.Kind() {
-	case reflect.Int:
-		err = validateInt(f, v)
-	case reflect.String:
-		err = validateStr(f, v)
+	switch v.Interface().(type) {
+	case int:
+		err = validateInt(f, int(v.Int()))
+	case string:
+		err = validateStr(f, v.String())
+	case []int:
+		for _, n := range v.Interface().([]int) {
+			if e := validateInt(f, n); e != nil {
+				return e
+			}
+		}
+	case []string:
+		for _, s := range v.Interface().([]string) {
+			if e := validateStr(f, s); e != nil {
+				return e
+			}
+		}
 	}
 	return
 }
 
-func validateInt(f reflect.StructField, v reflect.Value) error {
+func validateInt(f reflect.StructField, num int) error {
 	tk := strings.Split(f.Tag.Get("validate"), ":")[0]
 	tv := strings.Split(f.Tag.Get("validate"), ":")[1]
-	num := int(v.Int())
 
 	switch tk {
 	case "min":
@@ -108,10 +119,9 @@ func validateInt(f reflect.StructField, v reflect.Value) error {
 	return nil
 }
 
-func validateStr(f reflect.StructField, v reflect.Value) error {
+func validateStr(f reflect.StructField, str string) error {
 	tk := strings.Split(f.Tag.Get("validate"), ":")[0]
 	tv := strings.Split(f.Tag.Get("validate"), ":")[1]
-	str := v.String()
 
 	switch tk {
 	case "len":
