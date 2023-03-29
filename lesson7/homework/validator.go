@@ -18,11 +18,11 @@ type ValidationError struct {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	var errstrings []string
+	var strs []string
 	for _, e := range v {
-		errstrings = append(errstrings, e.Err.Error())
+		strs = append(strs, e.Err.Error())
 	}
-	return strings.Join(errstrings, ", ")
+	return strings.Join(strs, ", ")
 }
 
 func Validate(val any) error {
