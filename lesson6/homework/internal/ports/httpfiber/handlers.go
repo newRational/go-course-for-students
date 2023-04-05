@@ -2,6 +2,7 @@ package httpfiber
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -18,14 +19,18 @@ func createAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		//TODO: вызов логики, например, CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
-		// TODO: метод должен возвращать AdSuccessResponse или ошибку.
-
+		ad, err := a.CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			code, e := strconv.Atoi(err.Error())
+			if e != nil {
+				c.Status(http.StatusInternalServerError)
+			} else {
+				c.Status(code)
+			}
 			return c.JSON(AdErrorResponse(err))
 		}
-		return c.JSON(AdSuccessResponse( /* объект ad */ ))
+
+		return c.JSON(AdSuccessResponse(ad))
 	}
 }
 
@@ -44,15 +49,19 @@ func changeAdStatus(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		// TODO: вызов логики ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
-		// TODO: метод должен возвращать AdSuccessResponse или ошибку.
+		ad, err := a.ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
 
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			code, e := strconv.Atoi(err.Error())
+			if e != nil {
+				c.Status(http.StatusInternalServerError)
+			} else {
+				c.Status(code)
+			}
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		return c.JSON(AdSuccessResponse( /* объект ad */ ))
+		return c.JSON(AdSuccessResponse(ad))
 	}
 }
 
@@ -71,14 +80,18 @@ func updateAd(a app.App) fiber.Handler {
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		// TODO: вызов логики, например, UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
-		// TODO: метод должен возвращать AdSuccessResponse или ошибку.
+		ad, err := a.UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 
 		if err != nil {
-			c.Status(http.StatusInternalServerError)
+			code, e := strconv.Atoi(err.Error())
+			if e != nil {
+				c.Status(http.StatusInternalServerError)
+			} else {
+				c.Status(code)
+			}
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		return c.JSON(AdSuccessResponse( /* объект ad */ ))
+		return c.JSON(AdSuccessResponse(ad))
 	}
 }

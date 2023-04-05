@@ -35,6 +35,7 @@ var ErrForbidden = fmt.Errorf("forbidden")
 
 func getResponse(server httpfiber.Server, req *http.Request, out interface{}) error {
 	resp, err := server.Test(req)
+
 	if err != nil {
 		return fmt.Errorf("unexpected error: %w", err)
 	}
@@ -102,6 +103,7 @@ func changeAdStatus(server httpfiber.Server, userID int64, adID int64, published
 
 	var response adResponse
 	err = getResponse(server, req, &response)
+
 	if err != nil {
 		return adResponse{}, err
 	}
