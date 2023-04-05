@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/newRational/vld"
 	"homework6/internal/ads"
 )
@@ -22,8 +22,8 @@ type Repository interface {
 	AddAd(ctx context.Context, ad *ads.Ad) (int64, error)
 }
 
-var ErrBadRequest = errors.New("400")
-var ErrForbidden = errors.New("403")
+var ErrBadRequest = fmt.Errorf("bad request")
+var ErrForbidden = fmt.Errorf("forbidden")
 
 func NewApp(repo Repository) App {
 	return &AdApp{repo: repo}
