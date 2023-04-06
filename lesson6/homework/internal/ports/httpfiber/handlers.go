@@ -1,8 +1,8 @@
 package httpfiber
 
 import (
+	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -21,11 +21,12 @@ func createAd(a app.App) fiber.Handler {
 
 		ad, err := a.CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
 		if err != nil {
-			code, e := strconv.Atoi(err.Error())
-			if e != nil {
-				c.Status(http.StatusInternalServerError)
+			if errors.Is(err, app.ErrForbidden) {
+				c.Status(403)
+			} else if errors.Is(err, app.ErrBadRequest) {
+				c.Status(400)
 			} else {
-				c.Status(code)
+				c.Status(http.StatusInternalServerError)
 			}
 			return c.JSON(AdErrorResponse(err))
 		}
@@ -50,13 +51,13 @@ func changeAdStatus(a app.App) fiber.Handler {
 		}
 
 		ad, err := a.ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
-
 		if err != nil {
-			code, e := strconv.Atoi(err.Error())
-			if e != nil {
-				c.Status(http.StatusInternalServerError)
+			if errors.Is(err, app.ErrForbidden) {
+				c.Status(403)
+			} else if errors.Is(err, app.ErrBadRequest) {
+				c.Status(400)
 			} else {
-				c.Status(code)
+				c.Status(http.StatusInternalServerError)
 			}
 			return c.JSON(AdErrorResponse(err))
 		}
@@ -81,13 +82,13 @@ func updateAd(a app.App) fiber.Handler {
 		}
 
 		ad, err := a.UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
-
 		if err != nil {
-			code, e := strconv.Atoi(err.Error())
-			if e != nil {
-				c.Status(http.StatusInternalServerError)
+			if errors.Is(err, app.ErrForbidden) {
+				c.Status(403)
+			} else if errors.Is(err, app.ErrBadRequest) {
+				c.Status(400)
 			} else {
-				c.Status(code)
+				c.Status(http.StatusInternalServerError)
 			}
 			return c.JSON(AdErrorResponse(err))
 		}
