@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -11,6 +12,7 @@ func TestCreateAd_EmptyTitle(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createAd(123, "", "world")
+	fmt.Println("err:", err)
 	assert.ErrorIs(t, err, ErrBadRequest)
 }
 

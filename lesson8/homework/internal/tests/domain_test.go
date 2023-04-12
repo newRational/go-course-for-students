@@ -12,7 +12,7 @@ func TestChangeStatusAdOfAnotherUser(t *testing.T) {
 	resp, err := client.createAd(123, "hello", "world")
 	assert.NoError(t, err)
 
-	_, err = client.changeAdStatus(100, resp.Data.ID, true)
+	resp, err = client.changeAdStatus(100, resp.Data.ID, true)
 	assert.ErrorIs(t, err, ErrForbidden)
 }
 

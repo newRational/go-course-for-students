@@ -16,9 +16,7 @@ type Server struct {
 func NewHTTPServer(port string, a app.App) Server {
 	gin.SetMode(gin.ReleaseMode)
 	s := Server{port: port, app: gin.New()}
-
-	// todo: add your own logic
-
+	AppRouter(s.app, a)
 	return s
 }
 
