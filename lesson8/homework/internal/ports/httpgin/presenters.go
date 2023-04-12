@@ -3,6 +3,8 @@ package httpgin
 import (
 	"github.com/gin-gonic/gin"
 	"homework8/internal/ads"
+	"homework8/internal/users"
+	"time"
 )
 
 type createAdRequest struct {
@@ -30,20 +32,43 @@ type updateAdRequest struct {
 	UserID int64  `json:"user_id"`
 }
 
+type listAdsRequest struct {
+	Title     string    `json:"title"`
+	UserID    int64     `json:"user_id"`
+	Published bool      `json:"published"`
+	Created   time.Time `json:"created"`
+}
+
+type createUserRequest struct {
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
+type userResponse struct {
+	ID       int64  `json:"id"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
+type updateUserRequest struct {
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
 func AdSuccessResponse(ad *ads.Ad) gin.H {
 	return gin.H{
 		"data": adResponse{
 			ID:        ad.ID,
 			Title:     ad.Title,
 			Text:      ad.Text,
-			AuthorID:  ad.AuthorID,
+			AuthorID:  ad.UserID,
 			Published: ad.Published,
 		},
 		"error": nil,
 	}
 }
 
-func AdErrorResponse(err error) gin.H {
+func ErrorResponse(err error) gin.H {
 	return gin.H{
 		"data":  nil,
 		"error": err.Error(),
@@ -57,7 +82,7 @@ func AdsSuccessResponse(a []*ads.Ad) gin.H {
 			ID:        a[i].ID,
 			Title:     a[i].Title,
 			Text:      a[i].Text,
-			AuthorID:  a[i].AuthorID,
+			AuthorID:  a[i].UserID,
 			Published: a[i].Published,
 		})
 	}
@@ -67,3 +92,29 @@ func AdsSuccessResponse(a []*ads.Ad) gin.H {
 		"error": nil,
 	}
 }
+
+func UserSuccessResponse(u *users.User) gin.H {
+	return gin.H{
+		"data": userResponse{
+			ID:       u.ID,
+			Nickname: u.Nickname,
+			Email:    u.Email,
+		},
+		"error": nil,
+	}
+}
+
+/*
+func AdSuccessResponse(ad *ads.Ad) gin.H {
+	return gin.H{
+		"data": adResponse{
+			ID:        ad.ID,
+			Title:     ad.Title,
+			Text:      ad.Text,
+			AuthorID:  ad.AuthorID,
+			Published: ad.Published,
+		},
+		"error": nil,
+	}
+}
+*/

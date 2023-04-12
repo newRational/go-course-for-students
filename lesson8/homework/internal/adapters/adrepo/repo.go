@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"homework8/internal/ads"
-	"homework8/internal/app"
 )
 
 type RepoMap struct {
 	storage map[int64]*ads.Ad
 }
 
-func New() app.Repository {
+func New() ads.Repository {
 	return &RepoMap{
 		storage: make(map[int64]*ads.Ad),
 	}
@@ -50,7 +49,77 @@ func (r *RepoMap) AddAd(ctx context.Context, ad *ads.Ad) (ID int64, err error) {
 	return ad.ID, nil
 }
 
-func (r *RepoMap) Ads(ctx context.Context) (adverts []*ads.Ad, err error) {
+//
+//func (r *RepoMap) AdsByPublished(ctx context.Context, published bool) (adverts []*ads.Ad, err error) {
+//	defer func() {
+//		if ctxErr := ctx.Err(); ctxErr != nil {
+//			err = ctxErr
+//		}
+//	}()
+//
+//	for _, a := range r.storage {
+//		if a.Published == published {
+//			adverts = append(adverts, a)
+//		}
+//	}
+//
+//	return adverts, nil
+//}
+//
+//func (r *RepoMap) AdsByUserID(ctx context.Context, userID int64) (adverts []*ads.Ad, err error) {
+//	defer func() {
+//		if ctxErr := ctx.Err(); ctxErr != nil {
+//			err = ctxErr
+//		}
+//	}()
+//
+//	for _, a := range r.storage {
+//		if a.UserID == userID {
+//			adverts = append(adverts, a)
+//		}
+//	}
+//
+//	return adverts, nil
+//}
+//
+//func (r *RepoMap) AdsByCreated(ctx context.Context, created time.Time) (adverts []*ads.Ad, err error) {
+//	defer func() {
+//		if ctxErr := ctx.Err(); ctxErr != nil {
+//			err = ctxErr
+//		}
+//	}()
+//
+//	for _, a := range r.storage {
+//		if a.Created.Date() == created.Date() {
+//			adverts = append(adverts, a)
+//		}
+//	}
+//
+//	return adverts, nil
+//}
+//
+//func (r *RepoMap) AdsByTitle(ctx context.Context, title string) (adverts []*ads.Ad, err error) {
+//	defer func() {
+//		if ctxErr := ctx.Err(); ctxErr != nil {
+//			err = ctxErr
+//		}
+//	}()
+//
+//	reg, err := regexp.Compile(title + ".*")
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	for _, a := range r.storage {
+//		if reg.MatchString(a.Title) {
+//			adverts = append(adverts, a)
+//		}
+//	}
+//
+//	return adverts, nil
+//}
+
+func (r *RepoMap) AdsByFilters(ctx context.Context, f *ads.Filter) (adverts []*ads.Ad, err error) {
 	defer func() {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			err = ctxErr
@@ -58,7 +127,9 @@ func (r *RepoMap) Ads(ctx context.Context) (adverts []*ads.Ad, err error) {
 	}()
 
 	for _, a := range r.storage {
-		adverts = append(adverts, a)
+		if f.Suits(a) {
+			adverts = append(adverts, a)
+		}
 	}
 
 	return adverts, nil

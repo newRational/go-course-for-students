@@ -7,8 +7,19 @@ import (
 )
 
 func AppRouter(r gin.IRouter, a app.App) {
-	r.POST("/api/v1/ads", createAd(a))                    // Метод для создания объявления (ad)
-	r.PUT("/api/v1/ads/:ad_id/status", changeAdStatus(a)) // Метод для изменения статуса объявления (опубликовано - Published = true или снято с публикации Published = false)
-	r.PUT("api/v1/ads/:ad_id", updateAd(a))               // Метод для обновления текста(Text) или заголовка(Title) объявления
-	r.GET("/api/v1/ads", listAds(a))                      // Метод для получения всех опубликованных объявлений
+	g := r.Group("/api/v1")
+
+	users := g.Group("/users")
+	{
+		users.POST("", createUser(a))
+		users.PUT("/:user_id", updateUser(a))
+	}
+
+	ads := g.Group("/ads")
+	{
+		ads.GET("", listAds(a))
+		ads.POST("", createAd(a))
+		ads.PUT("/:ad_id", updateAd(a))
+		ads.PUT("/:ad_id/status", changeAdStatus(a))
+	}
 }
