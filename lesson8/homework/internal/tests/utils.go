@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 
 	"homework8/internal/adapters/adrepo"
 	"homework8/internal/app"
@@ -174,8 +175,14 @@ func (tc *testClient) updateAd(userID int64, adID int64, title string, text stri
 	return response, nil
 }
 
-func (tc *testClient) listAds() (adsResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", nil)
+func (tc *testClient) listAds(params map[string]string) (adsResponse, error) {
+	p := url.Values{}
+	for k, v := range params {
+		p.Add(k, v)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads?"+p.Encode(), nil)
+
 	if err != nil {
 		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
@@ -201,6 +208,34 @@ func (tc *testClient) createUser(nick, email string) (userResponse, error) {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, tc.baseURL+"/api/v1/users", bytes.NewReader(data))
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response userResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return userResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) updateUser(userId int64, nick, email string) (userResponse, error) {
+	body := map[string]any{
+		"user_id":  userId,
+		"nickname": nick,
+		"email":    email,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userId), bytes.NewReader(data))
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}

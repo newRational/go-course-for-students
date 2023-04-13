@@ -6,6 +6,7 @@ import (
 	"homework8/internal/ads"
 	"homework8/internal/app"
 	"net/http"
+	"strconv"
 )
 
 // Метод для создания объявления (ad)
@@ -15,6 +16,7 @@ func createAd(a app.App) gin.HandlerFunc {
 		err := c.Bind(&reqBody)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
 		}
 
 		ad, err := a.CreateAd(c, reqBody.Title, reqBody.Text, reqBody.UserID)
@@ -39,9 +41,15 @@ func changeAdStatus(a app.App) gin.HandlerFunc {
 		var reqBody changeAdStatusRequest
 		if err := c.Bind(&reqBody); err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
 		}
 
-		adID := c.GetInt("ad_id")
+		v := c.Param("ad_id")
+		adID, err := strconv.Atoi(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
+		}
 
 		ad, err := a.ChangeAdStatus(c, int64(adID), reqBody.UserID, reqBody.Published)
 		if err != nil {
@@ -65,6 +73,7 @@ func updateAd(a app.App) gin.HandlerFunc {
 		var reqBody updateAdRequest
 		if err := c.Bind(&reqBody); err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
 		}
 
 		adID := c.GetInt("ad_id")
@@ -85,16 +94,49 @@ func updateAd(a app.App) gin.HandlerFunc {
 	}
 }
 
+// Метод для получения объявления по его ID
+func showAd(a app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		v := c.Param("ad_id")
+		adID, err := strconv.Atoi(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
+		}
+
+		ad, err := a.AdByID(c, int64(adID))
+		if err != nil {
+			if errors.Is(err, app.ErrForbidden) {
+				c.JSON(403, ErrorResponse(err))
+			} else if errors.Is(err, app.ErrBadRequest) {
+				c.JSON(400, ErrorResponse(err))
+			} else {
+				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
+			}
+			return
+		}
+
+		c.JSON(http.StatusOK, AdSuccessResponse(ad))
+	}
+}
+
 // Метод для получения всех опубликованных объявлений
 func listAds(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var reqBody listAdsRequest
-		err := c.Bind(&reqBody)
-		if err != nil {
+		var reqParams listAdsRequest
+
+		if err := c.Bind(&reqParams); err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
 		}
 
-		adverts, err := a.AdsByFilter(c, createAdFilter(c, reqBody))
+		p, err := createAdPattern(c, reqParams)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
+		}
+
+		adverts, err := a.AdsByPattern(c, p)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(403, ErrorResponse(err))
@@ -116,6 +158,7 @@ func createUser(a app.App) gin.HandlerFunc {
 		err := c.Bind(&reqBody)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
 		}
 
 		u, err := a.CreateUser(c, reqBody.Nickname, reqBody.Email)
@@ -139,6 +182,7 @@ func updateUser(a app.App) gin.HandlerFunc {
 		var reqBody updateUserRequest
 		if err := c.Bind(&reqBody); err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
 		}
 
 		userID := c.GetInt("user_id")
@@ -159,17 +203,25 @@ func updateUser(a app.App) gin.HandlerFunc {
 	}
 }
 
-func createAdFilter(c *gin.Context, r listAdsRequest) *ads.Filter {
-	f := ads.NewFilter()
+func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error) {
+	f := ads.NewPattern()
 
-	f.Title = c.GetString("title")
-	f.Created = c.GetTime("created")
-	if _, ok := c.GetQuery("user_id"); ok {
-		f.UserID = r.UserID
+	f.Title = params.Title
+	f.Created = params.Created
+	if v, ok := c.GetQuery("user_id"); ok {
+		id, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, err
+		}
+		f.UserID = int64(id)
 	}
-	if _, ok := c.GetQuery("published"); ok {
-		f.Published = r.Published
+	if v, ok := c.GetQuery("published"); ok {
+		p, err := strconv.ParseBool(v)
+		if err != nil {
+			return nil, err
+		}
+		f.Published = p
 	}
 
-	return f
+	return f, nil
 }

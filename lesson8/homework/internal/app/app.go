@@ -15,7 +15,8 @@ type App interface {
 	CreateAd(ctx context.Context, title, text string, userID int64) (*ads.Ad, error)
 	UpdateAd(ctx context.Context, ID, userID int64, title, text string) (*ads.Ad, error)
 	ChangeAdStatus(ctx context.Context, ID, userID int64, published bool) (*ads.Ad, error)
-	AdsByFilter(ctx context.Context, o *ads.Filter) ([]*ads.Ad, error)
+	AdByID(ctx context.Context, ID int64) (*ads.Ad, error)
+	AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, error)
 
 	CreateUser(ctx context.Context, nick, email string) (*users.User, error)
 	UpdateUser(ctx context.Context, ID int64, nick, email string) (*users.User, error)
@@ -48,7 +49,7 @@ func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) 
 		Text:    text,
 		UserID:  userID,
 		Created: time.Now(),
-		Changed: time.Now(),
+		Updated: time.Now(),
 	}
 	if err := vld.Validate(*ad); err != nil {
 		return nil, ErrBadRequest
@@ -84,20 +85,20 @@ func (a *AdApp) UpdateAd(ctx context.Context, ID, userID int64, title, text stri
 
 	ad.Text = text
 	ad.Title = title
-	ad.Changed = time.Now()
+	ad.Updated = time.Now()
 
 	return ad, nil
 }
 
 func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published bool) (*ads.Ad, error) {
+	_, err := a.userRepo.UserById(ctx, userID)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
 	ad, err := a.adRepo.AdById(ctx, ID)
 	if err != nil {
 		return nil, err
-	}
-
-	_, err = a.userRepo.UserById(ctx, userID)
-	if err != nil {
-		return nil, ErrBadRequest
 	}
 
 	if ad.UserID != userID {
@@ -105,13 +106,22 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published 
 	}
 
 	ad.Published = published
-	ad.Changed = time.Now()
+	ad.Updated = time.Now()
 
 	return ad, nil
 }
 
-func (a *AdApp) AdsByFilter(ctx context.Context, f *ads.Filter) ([]*ads.Ad, error) {
-	adverts, err := a.adRepo.AdsByFilters(ctx, f)
+func (a *AdApp) AdByID(ctx context.Context, ID int64) (*ads.Ad, error) {
+	ad, err := a.adRepo.AdById(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return ad, nil
+}
+
+func (a *AdApp) AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, error) {
+	adverts, err := a.adRepo.AdsByPattern(ctx, p)
 	if err != nil {
 		return nil, err
 	}

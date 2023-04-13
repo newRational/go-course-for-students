@@ -49,7 +49,7 @@ func (r *RepoMap) AddAd(ctx context.Context, ad *ads.Ad) (ID int64, err error) {
 	return ad.ID, nil
 }
 
-func (r *RepoMap) AdsByFilters(ctx context.Context, f *ads.Filter) (adverts []*ads.Ad, err error) {
+func (r *RepoMap) AdsByPattern(ctx context.Context, p *ads.Pattern) (adverts []*ads.Ad, err error) {
 	defer func() {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			err = ctxErr
@@ -57,7 +57,7 @@ func (r *RepoMap) AdsByFilters(ctx context.Context, f *ads.Filter) (adverts []*a
 	}()
 
 	for _, a := range r.storage {
-		if f.Suits(a) {
+		if p.Match(a) {
 			adverts = append(adverts, a)
 		}
 	}

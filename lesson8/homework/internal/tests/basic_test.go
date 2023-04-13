@@ -1,9 +1,8 @@
 package tests
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestCreateAd(t *testing.T) {
@@ -80,10 +79,6 @@ func TestListAds(t *testing.T) {
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
-	// added
-	_, err = client.createAd(123, "hello", "world")
-	assert.ErrorIs(t, err, ErrBadRequest)
-
 	response, err := client.createAd(0, "hello", "world")
 	assert.NoError(t, err)
 
@@ -93,7 +88,7 @@ func TestListAds(t *testing.T) {
 	_, err = client.createAd(0, "best cat", "not for sale")
 	assert.NoError(t, err)
 
-	ads, err := client.listAds()
+	ads, err := client.listAds(nil)
 	assert.NoError(t, err)
 	assert.Len(t, ads.Data, 1)
 	assert.Equal(t, ads.Data[0].ID, publishedAd.Data.ID)

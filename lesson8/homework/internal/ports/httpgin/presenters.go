@@ -33,26 +33,26 @@ type updateAdRequest struct {
 }
 
 type listAdsRequest struct {
-	Title     string    `json:"title"`
-	UserID    int64     `json:"user_id"`
-	Published bool      `json:"published"`
-	Created   time.Time `json:"created"`
+	Title     string    `form:"title"`
+	UserID    int64     `form:"user_id"`
+	Published bool      `form:"published"`
+	Created   time.Time `form:"created" time_format:"2006-01-02"`
 }
 
 type createUserRequest struct {
 	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
+	Email    string `json:"email" `
 }
 
 type userResponse struct {
 	ID       int64  `json:"id"`
 	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
+	Email    string `json:"email" binding:"email"`
 }
 
 type updateUserRequest struct {
 	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
+	Email    string `json:"email" binding:"email"`
 }
 
 func AdSuccessResponse(ad *ads.Ad) gin.H {
