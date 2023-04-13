@@ -1,6 +1,10 @@
 package ads
 
-import "time"
+import (
+	"fmt"
+	"os"
+	"time"
+)
 
 type Pattern Ad
 
@@ -28,6 +32,10 @@ func (p *Pattern) Match(ad *Ad) bool {
 	if p.Created != t {
 		pY, pM, pD := p.Created.Date()
 		y, m, d := ad.Created.Date()
+
+		fmt.Fprintf(os.Stderr, "pY: %v, pM: %v, pD: %v", pY, pM, pD)
+		fmt.Fprintf(os.Stderr, "y: %v, m: %v, d: %v", y, m, d)
+
 		if y != pY || m != pM || d != pD {
 			return false
 		}

@@ -78,11 +78,11 @@ func TestListAdsWithParams(t *testing.T) {
 	_, err = client.changeAdStatus(resp.Data.AuthorID, resp.Data.ID, true)
 	assert.NoError(t, err)
 
-	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0"})
+	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0", "created": "2023-04-14"})
 	assert.NoError(t, err)
 
 	fmt.Fprintln(os.Stderr, "ads:", ads.Data)
-	assert.Len(t, ads.Data, 1)
+	assert.Len(t, ads.Data, 2)
 
 	assert.Contains(t, ads.Data, ad0.Data)
 	assert.Contains(t, ads.Data, ad1.Data)
