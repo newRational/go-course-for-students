@@ -22,7 +22,7 @@ func logger() gin.HandlerFunc {
 		log.SetPrefix("[ADAPP] - ")
 		code := fmt.Sprintf("<"+StatusCodeColor(c.Writer.Status())+"%d"+reset+">", c.Writer.Status())
 		path := c.Request.URL.Path
-		log.Print("- ", code, " - path: ", path)
+		log.Print("- ", code, " - "+c.Request.Method+":\t", path)
 	}
 }
 

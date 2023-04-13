@@ -37,6 +37,11 @@ func NewApp(adRepo ads.Repository, userRepo users.Repository) App {
 }
 
 func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) (*ads.Ad, error) {
+	_, err := a.userRepo.UserById(ctx, userID)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
 	ad := &ads.Ad{
 		ID:      -1,
 		Title:   title,
@@ -64,6 +69,11 @@ func (a *AdApp) UpdateAd(ctx context.Context, ID, userID int64, title, text stri
 		return nil, err
 	}
 
+	_, err = a.userRepo.UserById(ctx, userID)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
+
 	if ad.UserID != userID {
 		return nil, ErrForbidden
 	}
@@ -85,10 +95,10 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published 
 		return nil, err
 	}
 
-	//_, err = a.userRepo.UserById(ctx, userID)
-	//if err != nil {
-	//	return nil, err
-	//}
+	_, err = a.userRepo.UserById(ctx, userID)
+	if err != nil {
+		return nil, ErrBadRequest
+	}
 
 	if ad.UserID != userID {
 		return nil, ErrForbidden
@@ -130,9 +140,9 @@ func (a *AdApp) CreateUser(ctx context.Context, nick, email string) (*users.User
 
 func (a *AdApp) UpdateUser(ctx context.Context, ID int64, nick, email string) (*users.User, error) {
 	u, err := a.userRepo.UserById(ctx, ID)
-	//if err != nil {
-	//	return nil, err
-	//}
+	if err != nil {
+		return nil, ErrBadRequest
+	}
 
 	if err = vld.Validate(users.User{Nickname: nick, Email: email}); err != nil {
 		return nil, ErrBadRequest
