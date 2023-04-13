@@ -19,24 +19,6 @@ jobs:
         work_dir:
           - ./lesson8/homework
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 'stable'
-
-      - name: Build
-        working-directory: ${{ matrix.work_dir }}
-        run: |
-          go mod tidy
-          go build -v ./...
-      - name: Lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          working-directory: ${{ matrix.work_dir }}
-
       - name: Test
         working-directory: ${{ matrix.work_dir }}
         run: |

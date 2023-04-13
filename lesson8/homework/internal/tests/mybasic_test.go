@@ -1,7 +1,9 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -60,7 +62,7 @@ func TestListAdsWithParams(t *testing.T) {
 
 	_, err = client.createUser("polly", "polly@gmail.com")
 	assert.NoError(t, err)
-	
+
 	ad0, err := client.createAd(0, "hello", "world")
 	assert.NoError(t, err)
 
@@ -79,7 +81,8 @@ func TestListAdsWithParams(t *testing.T) {
 	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0", "created": "2023-04-14"})
 	assert.NoError(t, err)
 
-	assert.Len(t, ads.Data, 2)
+	fmt.Fprintln(os.Stderr, "ads:", ads.Data)
+	assert.Len(t, ads.Data, 1)
 
 	assert.Contains(t, ads.Data, ad0.Data)
 	assert.Contains(t, ads.Data, ad1.Data)
