@@ -33,8 +33,8 @@ func (p *Pattern) Match(ad *Ad) bool {
 		pY, pM, pD := p.Created.Date()
 		y, m, d := ad.Created.Date()
 
-		fmt.Fprintf(os.Stderr, "pY: %v, pM: %v, pD: %v", pY, pM, pD)
-		fmt.Fprintf(os.Stderr, "y: %v, m: %v, d: %v", y, m, d)
+		fmt.Fprintf(os.Stderr, "pY: %v, pM: %v, pD: %v\n", pY, pM, pD)
+		fmt.Fprintf(os.Stderr, "y: %v, m: %v, d: %v\n", y, m, d)
 
 		if y != pY || m != pM || d != pD {
 			return false
