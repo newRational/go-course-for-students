@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -11,19 +10,16 @@ import (
 func TestCreateAd_EmptyTitle(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
 	_, err = client.createAd(0, "", "world")
-	fmt.Println("err:", err)
 	assert.ErrorIs(t, err, ErrBadRequest)
 }
 
 func TestCreateAd_TooLongTitle(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
@@ -36,7 +32,6 @@ func TestCreateAd_TooLongTitle(t *testing.T) {
 func TestCreateAd_EmptyText(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
@@ -47,7 +42,6 @@ func TestCreateAd_EmptyText(t *testing.T) {
 func TestCreateAd_TooLongText(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
@@ -60,7 +54,6 @@ func TestCreateAd_TooLongText(t *testing.T) {
 func TestUpdateAd_EmptyTitle(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
@@ -74,7 +67,6 @@ func TestUpdateAd_EmptyTitle(t *testing.T) {
 func TestUpdateAd_TooLongTitle(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
@@ -90,7 +82,6 @@ func TestUpdateAd_TooLongTitle(t *testing.T) {
 func TestUpdateAd_EmptyText(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
@@ -104,7 +95,6 @@ func TestUpdateAd_EmptyText(t *testing.T) {
 func TestUpdateAd_TooLongText(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 

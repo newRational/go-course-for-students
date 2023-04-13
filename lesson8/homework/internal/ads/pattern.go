@@ -27,15 +27,15 @@ func (p *Pattern) Match(ad *Ad) bool {
 	t := time.Time{}
 	if p.Created != t {
 		pY, pM, pD := p.Created.Date()
-		aY, aM, aD := ad.Created.Date()
-		if pY != aY || pM != aM || pD != aD {
+		y, m, d := ad.Created.Date()
+		if y != pY || m != pM || d != pD {
 			return false
 		}
 	}
 	if p.Updated != t {
 		pY, pM, pD := p.Created.Date()
-		aY, aM, aD := ad.Created.Date()
-		if pY != aY || pM != aM || pD != aD {
+		y, m, d := ad.Created.Date()
+		if y != pY || m != pM || d != pD {
 			return false
 		}
 	}

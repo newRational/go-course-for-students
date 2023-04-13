@@ -9,11 +9,9 @@ import (
 func TestChangeStatusAdOfAnotherUser(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
-	// create user
 	_, err = client.createUser("polly", "polly@gmail.com")
 	assert.NoError(t, err)
 
@@ -27,11 +25,9 @@ func TestChangeStatusAdOfAnotherUser(t *testing.T) {
 func TestUpdateAdOfAnotherUser(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
-	// create user
 	_, err = client.createUser("polly", "polly@gmail.com")
 	assert.NoError(t, err)
 
@@ -45,11 +41,9 @@ func TestUpdateAdOfAnotherUser(t *testing.T) {
 func TestCreateAd_ID(t *testing.T) {
 	client := getTestClient()
 
-	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
-	// added
 	_, err = client.createAd(123, "hello", "world")
 	assert.ErrorIs(t, err, ErrBadRequest)
 

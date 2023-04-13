@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -90,8 +89,6 @@ func TestListAdsWithParams(t *testing.T) {
 	assert.NoError(t, err)
 
 	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0", "created": "2023-04-14"})
-	fmt.Println("ads:", ads)
-	fmt.Println("len:", len(ads.Data))
 	assert.NoError(t, err)
 
 	assert.Len(t, ads.Data, 2)

@@ -47,12 +47,12 @@ type createUserRequest struct {
 type userResponse struct {
 	ID       int64  `json:"id"`
 	Nickname string `json:"nickname"`
-	Email    string `json:"email" binding:"email"`
+	Email    string `json:"email"`
 }
 
 type updateUserRequest struct {
 	Nickname string `json:"nickname"`
-	Email    string `json:"email" binding:"email"`
+	Email    string `json:"email"` // про тег  binding:"email" знаю, просто решил реализовать свою валидацию email в пакете vld
 }
 
 func AdSuccessResponse(ad *ads.Ad) gin.H {

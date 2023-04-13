@@ -152,6 +152,7 @@ func listAds(a app.App) gin.HandlerFunc {
 	}
 }
 
+// Метод для создания пользователя
 func createUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var reqBody createUserRequest
@@ -177,6 +178,7 @@ func createUser(a app.App) gin.HandlerFunc {
 	}
 }
 
+// Метода для обновления пользователя
 func updateUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var reqBody updateUserRequest
@@ -203,6 +205,7 @@ func updateUser(a app.App) gin.HandlerFunc {
 	}
 }
 
+// Метод для генерации шаблона для выборки объявлений
 func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error) {
 	f := ads.NewPattern()
 
