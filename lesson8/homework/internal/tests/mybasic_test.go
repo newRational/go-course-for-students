@@ -1,8 +1,10 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestCreateUser(t *testing.T) {
@@ -61,6 +63,9 @@ func TestListAdsWithParams(t *testing.T) {
 	_, err = client.createUser("polly", "polly@gmail.com")
 	assert.NoError(t, err)
 
+	tc := time.Now().UTC()
+	s := fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", tc.Year(), tc.Month(), tc.Day(), tc.Hour(), tc.Minute(), tc.Second())
+
 	ad0, err := client.createAd(0, "hello", "world")
 	assert.NoError(t, err)
 
@@ -76,7 +81,7 @@ func TestListAdsWithParams(t *testing.T) {
 	_, err = client.changeAdStatus(resp.Data.AuthorID, resp.Data.ID, true)
 	assert.NoError(t, err)
 
-	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0", "created": "2023-04-14Z03:00"})
+	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0", "created": s})
 	assert.NoError(t, err)
 
 	assert.Len(t, ads.Data, 2)
