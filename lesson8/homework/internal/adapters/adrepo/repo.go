@@ -19,7 +19,7 @@ func New() ads.Repository {
 	}
 }
 
-func (r *RepoMap) AdById(ctx context.Context, ID int64) (ad *ads.Ad, err error) {
+func (r *RepoMap) AdById(_ context.Context, ID int64) (ad *ads.Ad, err error) {
 	r.m.RLock()
 	ad, ok := r.storage[ID]
 	r.m.RUnlock()
@@ -31,15 +31,10 @@ func (r *RepoMap) AdById(ctx context.Context, ID int64) (ad *ads.Ad, err error) 
 	return ad, nil
 }
 
-func (r *RepoMap) AddAd(ctx context.Context, ad *ads.Ad) (ID int64, err error) {
-	defer func() {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			err = ctxErr
-		}
-		r.m.Unlock()
-	}()
-
+func (r *RepoMap) AddAd(_ context.Context, ad *ads.Ad) (ID int64, err error) {
 	r.m.Lock()
+	defer r.m.Unlock()
+
 	_, ok := r.storage[ad.ID]
 	if ok {
 		return -1, errors.New("ad already exists")
@@ -51,20 +46,14 @@ func (r *RepoMap) AddAd(ctx context.Context, ad *ads.Ad) (ID int64, err error) {
 	return ad.ID, nil
 }
 
-func (r *RepoMap) AdsByPattern(ctx context.Context, p *ads.Pattern) (adverts []*ads.Ad, err error) {
-	defer func() {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			err = ctxErr
-		}
-		r.m.RUnlock()
-	}()
-
+func (r *RepoMap) AdsByPattern(_ context.Context, p *ads.Pattern) (adverts []*ads.Ad, err error) {
 	r.m.RLock()
 	for _, a := range r.storage {
 		if p.Match(a) {
 			adverts = append(adverts, a)
 		}
 	}
+	r.m.RUnlock()
 
 	return adverts, nil
 }

@@ -19,7 +19,7 @@ func New() users.Repository {
 	}
 }
 
-func (r *RepoMap) UserById(ctx context.Context, ID int64) (u *users.User, err error) {
+func (r *RepoMap) UserById(_ context.Context, ID int64) (u *users.User, err error) {
 	r.m.RLock()
 	u, ok := r.storage[ID]
 	r.m.RUnlock()
@@ -31,15 +31,10 @@ func (r *RepoMap) UserById(ctx context.Context, ID int64) (u *users.User, err er
 	return u, nil
 }
 
-func (r *RepoMap) AddUser(ctx context.Context, u *users.User) (ID int64, err error) {
-	defer func() {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			err = ctxErr
-		}
-		r.m.Unlock()
-	}()
-
+func (r *RepoMap) AddUser(_ context.Context, u *users.User) (ID int64, err error) {
 	r.m.Lock()
+	defer r.m.Unlock()
+
 	_, ok := r.storage[u.ID]
 	if ok {
 		return -1, errors.New("user already exists")
