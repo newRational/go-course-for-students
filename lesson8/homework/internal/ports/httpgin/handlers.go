@@ -22,9 +22,9 @@ func createAd(a app.App) gin.HandlerFunc {
 		ad, err := a.CreateAd(c, reqBody.Title, reqBody.Text, reqBody.UserID)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}
@@ -54,9 +54,9 @@ func changeAdStatus(a app.App) gin.HandlerFunc {
 		ad, err := a.ChangeAdStatus(c, int64(adID), reqBody.UserID, reqBody.Published)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}
@@ -81,9 +81,9 @@ func updateAd(a app.App) gin.HandlerFunc {
 		ad, err := a.UpdateAd(c, int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}
@@ -107,9 +107,9 @@ func showAd(a app.App) gin.HandlerFunc {
 		ad, err := a.AdByID(c, int64(adID))
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}
@@ -139,9 +139,9 @@ func listAds(a app.App) gin.HandlerFunc {
 		adverts, err := a.AdsByPattern(c, p)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}
@@ -165,9 +165,9 @@ func createUser(a app.App) gin.HandlerFunc {
 		u, err := a.CreateUser(c, reqBody.Nickname, reqBody.Email)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}
@@ -192,9 +192,9 @@ func updateUser(a app.App) gin.HandlerFunc {
 		u, err := a.UpdateUser(c, int64(userID), reqBody.Nickname, reqBody.Email)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
-				c.JSON(403, ErrorResponse(err))
+				c.JSON(http.StatusForbidden, ErrorResponse(err))
 			} else if errors.Is(err, app.ErrBadRequest) {
-				c.JSON(400, ErrorResponse(err))
+				c.JSON(http.StatusBadRequest, ErrorResponse(err))
 			} else {
 				c.JSON(http.StatusInternalServerError, ErrorResponse(err))
 			}

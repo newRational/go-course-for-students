@@ -4,26 +4,26 @@ import (
 	"context"
 	"errors"
 	"homework8/internal/ads"
+	"sync"
 )
 
 type RepoMap struct {
 	storage map[int64]*ads.Ad
+	m       sync.RWMutex
 }
 
 func New() ads.Repository {
 	return &RepoMap{
 		storage: make(map[int64]*ads.Ad),
+		m:       sync.RWMutex{},
 	}
 }
 
 func (r *RepoMap) AdById(ctx context.Context, ID int64) (ad *ads.Ad, err error) {
-	defer func() {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			err = ctxErr
-		}
-	}()
-
+	r.m.RLock()
 	ad, ok := r.storage[ID]
+	r.m.RUnlock()
+
 	if !ok {
 		return nil, errors.New("ad doesn't exist")
 	}
@@ -36,8 +36,10 @@ func (r *RepoMap) AddAd(ctx context.Context, ad *ads.Ad) (ID int64, err error) {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			err = ctxErr
 		}
+		r.m.Unlock()
 	}()
 
+	r.m.Lock()
 	_, ok := r.storage[ad.ID]
 	if ok {
 		return -1, errors.New("ad already exists")
@@ -54,8 +56,10 @@ func (r *RepoMap) AdsByPattern(ctx context.Context, p *ads.Pattern) (adverts []*
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			err = ctxErr
 		}
+		r.m.RUnlock()
 	}()
 
+	r.m.RLock()
 	for _, a := range r.storage {
 		if p.Match(a) {
 			adverts = append(adverts, a)
