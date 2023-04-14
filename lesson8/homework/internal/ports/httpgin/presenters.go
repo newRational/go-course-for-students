@@ -36,7 +36,7 @@ type listAdsRequest struct {
 	Title     string    `form:"title"`
 	UserID    int64     `form:"user_id"`
 	Published bool      `form:"published"`
-	Created   time.Time `form:"created" time_format:"2006-01-02"`
+	Created   time.Time `form:"created" time_format:"2006-01-02 15:04:05"`
 }
 
 type createUserRequest struct {
