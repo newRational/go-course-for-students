@@ -20,13 +20,13 @@ func logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 		log.SetPrefix("[ADAPP] - ")
-		code := fmt.Sprintf("<"+StatusCodeColor(c.Writer.Status())+"%d"+reset+">", c.Writer.Status())
+		code := fmt.Sprintf("<"+statusCodeColor(c.Writer.Status())+"%d"+reset+">", c.Writer.Status())
 		path := c.Request.URL.Path
 		log.Print("- ", code, " - "+c.Request.Method+":\t", path)
 	}
 }
 
-func StatusCodeColor(code int) string {
+func statusCodeColor(code int) string {
 	switch {
 	case code >= http.StatusOK && code < http.StatusMultipleChoices:
 		return green

@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateAd(t *testing.T) {

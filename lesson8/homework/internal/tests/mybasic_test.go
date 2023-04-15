@@ -2,9 +2,10 @@ package tests
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateUser(t *testing.T) {

@@ -3,8 +3,9 @@ package userrepo
 import (
 	"context"
 	"errors"
-	"homework8/internal/users"
 	"sync"
+
+	"homework8/internal/users"
 )
 
 type RepoMap struct {

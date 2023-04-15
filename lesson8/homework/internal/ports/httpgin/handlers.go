@@ -2,11 +2,13 @@ package httpgin
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"homework8/internal/ads"
-	"homework8/internal/app"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"homework8/internal/ads"
+	"homework8/internal/app"
 )
 
 // Метод для создания объявления (ad)
@@ -76,9 +78,9 @@ func updateAd(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		adID := c.GetInt("ad_id")
+		adID := c.GetInt64("ad_id")
 
-		ad, err := a.UpdateAd(c, int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
+		ad, err := a.UpdateAd(c, adID, reqBody.UserID, reqBody.Title, reqBody.Text)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))
@@ -187,9 +189,9 @@ func updateUser(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		userID := c.GetInt("user_id")
+		userID := c.GetInt64("user_id")
 
-		u, err := a.UpdateUser(c, int64(userID), reqBody.Nickname, reqBody.Email)
+		u, err := a.UpdateUser(c, userID, reqBody.Nickname, reqBody.Email)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))

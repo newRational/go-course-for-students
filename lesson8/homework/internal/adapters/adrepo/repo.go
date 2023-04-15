@@ -3,8 +3,9 @@ package adrepo
 import (
 	"context"
 	"errors"
-	"homework8/internal/ads"
 	"sync"
+
+	"homework8/internal/ads"
 )
 
 type RepoMap struct {
