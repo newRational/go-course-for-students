@@ -2,11 +2,14 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/newRational/vld"
 
+	"homework9/internal/adapters/adrepo"
+	"homework9/internal/adapters/userrepo"
 	"homework9/internal/ads"
 	"homework9/internal/users"
 )
@@ -30,8 +33,10 @@ type AdApp struct {
 	userRepo users.Repository
 }
 
-var ErrBadRequest = fmt.Errorf("bad request")
-var ErrForbidden = fmt.Errorf("forbidden")
+var (
+	ErrBadRequest = fmt.Errorf("bad request")
+	ErrForbidden  = fmt.Errorf("forbidden")
+)
 
 func NewApp(adRepo ads.Repository, userRepo users.Repository) App {
 	return &AdApp{
@@ -41,8 +46,8 @@ func NewApp(adRepo ads.Repository, userRepo users.Repository) App {
 }
 
 func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) (*ads.Ad, error) {
-	_, err := a.userRepo.UserById(ctx, userID)
-	if err != nil {
+	_, err := a.userRepo.UserByID(ctx, userID)
+	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
 	}
 
@@ -68,13 +73,13 @@ func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) 
 }
 
 func (a *AdApp) UpdateAd(ctx context.Context, ID, userID int64, title, text string) (*ads.Ad, error) {
-	ad, err := a.adRepo.AdById(ctx, ID)
-	if err != nil {
-		return nil, err
+	_, err := a.userRepo.UserByID(ctx, userID)
+	if errors.Is(err, userrepo.ErrNoUser) {
+		return nil, ErrBadRequest
 	}
 
-	_, err = a.userRepo.UserById(ctx, userID)
-	if err != nil {
+	ad, err := a.adRepo.AdByID(ctx, ID)
+	if errors.Is(err, adrepo.ErrNoAd) {
 		return nil, ErrBadRequest
 	}
 
@@ -94,14 +99,14 @@ func (a *AdApp) UpdateAd(ctx context.Context, ID, userID int64, title, text stri
 }
 
 func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published bool) (*ads.Ad, error) {
-	_, err := a.userRepo.UserById(ctx, userID)
-	if err != nil {
+	_, err := a.userRepo.UserByID(ctx, userID)
+	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
 	}
 
-	ad, err := a.adRepo.AdById(ctx, ID)
-	if err != nil {
-		return nil, err
+	ad, err := a.adRepo.AdByID(ctx, ID)
+	if errors.Is(err, adrepo.ErrNoAd) {
+		return nil, ErrBadRequest
 	}
 
 	if ad.UserID != userID {
@@ -115,21 +120,21 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published 
 }
 
 func (a *AdApp) DeleteAd(ctx context.Context, ID, userID int64) error {
-	_, err := a.userRepo.UserById(ctx, userID)
-	if err != nil {
+	_, err := a.userRepo.UserByID(ctx, userID)
+	if errors.Is(err, userrepo.ErrNoUser) {
 		return ErrBadRequest
 	}
 
-	ad, err := a.adRepo.AdById(ctx, ID)
-	if err != nil {
-		return err
+	ad, err := a.adRepo.AdByID(ctx, ID)
+	if errors.Is(err, adrepo.ErrNoAd) {
+		return ErrBadRequest
 	}
 
 	if ad.UserID != userID {
 		return ErrForbidden
 	}
 
-	if err = a.adRepo.DeleteAd(ctx, ID, userID); err != nil {
+	if err = a.adRepo.DeleteAd(ctx, ID); err != nil {
 		return err
 	}
 
@@ -137,9 +142,9 @@ func (a *AdApp) DeleteAd(ctx context.Context, ID, userID int64) error {
 }
 
 func (a *AdApp) AdByID(ctx context.Context, ID int64) (*ads.Ad, error) {
-	ad, err := a.adRepo.AdById(ctx, ID)
-	if err != nil {
-		return nil, err
+	ad, err := a.adRepo.AdByID(ctx, ID)
+	if errors.Is(err, adrepo.ErrNoAd) {
+		return nil, ErrBadRequest
 	}
 
 	return ad, nil
@@ -147,8 +152,8 @@ func (a *AdApp) AdByID(ctx context.Context, ID int64) (*ads.Ad, error) {
 
 func (a *AdApp) AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, error) {
 	adverts, err := a.adRepo.AdsByPattern(ctx, p)
-	if err != nil {
-		return nil, err
+	if errors.Is(err, adrepo.ErrNoAd) {
+		return nil, ErrBadRequest
 	}
 
 	return adverts, nil
@@ -174,8 +179,8 @@ func (a *AdApp) CreateUser(ctx context.Context, nick, email string) (*users.User
 }
 
 func (a *AdApp) UpdateUser(ctx context.Context, ID int64, nick, email string) (*users.User, error) {
-	u, err := a.userRepo.UserById(ctx, ID)
-	if err != nil {
+	u, err := a.userRepo.UserByID(ctx, ID)
+	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
 	}
 
@@ -190,17 +195,17 @@ func (a *AdApp) UpdateUser(ctx context.Context, ID int64, nick, email string) (*
 }
 
 func (a *AdApp) UserByID(ctx context.Context, ID int64) (*users.User, error) {
-	u, err := a.userRepo.UserById(ctx, ID)
-	if err != nil {
-		return nil, err
+	u, err := a.userRepo.UserByID(ctx, ID)
+	if errors.Is(err, userrepo.ErrNoUser) {
+		return nil, ErrBadRequest
 	}
 
 	return u, nil
 }
 
 func (a *AdApp) DeleteUser(ctx context.Context, ID int64) error {
-	_, err := a.userRepo.UserById(ctx, ID)
-	if err != nil {
+	_, err := a.userRepo.UserByID(ctx, ID)
+	if errors.Is(err, userrepo.ErrNoUser) {
 		return ErrBadRequest
 	}
 

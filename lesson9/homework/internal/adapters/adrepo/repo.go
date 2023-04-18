@@ -2,10 +2,15 @@ package adrepo
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 
 	"homework9/internal/ads"
+)
+
+var (
+	ErrNoAd            = fmt.Errorf("ad does not exist")
+	ErrAdAlreadyExists = fmt.Errorf("ad already exists")
 )
 
 type RepoMap struct {
@@ -20,13 +25,13 @@ func New() ads.Repository {
 	}
 }
 
-func (r *RepoMap) AdById(_ context.Context, ID int64) (ad *ads.Ad, err error) {
+func (r *RepoMap) AdByID(_ context.Context, ID int64) (ad *ads.Ad, err error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	ad, ok := r.storage[ID]
 
 	if !ok {
-		return nil, errors.New("ad doesn't exist")
+		return nil, ErrNoAd
 	}
 
 	return ad, nil
@@ -38,7 +43,7 @@ func (r *RepoMap) AddAd(_ context.Context, ad *ads.Ad) (ID int64, err error) {
 
 	_, ok := r.storage[ad.ID]
 	if ok {
-		return -1, errors.New("ad already exists")
+		return -1, ErrAdAlreadyExists
 	}
 
 	ad.ID = int64(len(r.storage))
@@ -65,7 +70,7 @@ func (r *RepoMap) DeleteAd(_ context.Context, ID int64) error {
 
 	_, ok := r.storage[ID]
 	if ok {
-		return errors.New("ad already exists")
+		return ErrNoAd
 	}
 
 	delete(r.storage, ID)

@@ -2,10 +2,15 @@ package userrepo
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 
 	"homework9/internal/users"
+)
+
+var (
+	ErrNoUser            = fmt.Errorf("user does not exist")
+	ErrUserAlreadyExists = fmt.Errorf("user already exists")
 )
 
 type RepoMap struct {
@@ -20,13 +25,13 @@ func New() users.Repository {
 	}
 }
 
-func (r *RepoMap) UserById(_ context.Context, ID int64) (u *users.User, err error) {
+func (r *RepoMap) UserByID(_ context.Context, ID int64) (u *users.User, err error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	u, ok := r.storage[ID]
 
 	if !ok {
-		return nil, errors.New("ad doesn't exist")
+		return nil, ErrNoUser
 	}
 
 	return u, nil
@@ -38,7 +43,7 @@ func (r *RepoMap) AddUser(_ context.Context, u *users.User) (ID int64, err error
 
 	_, ok := r.storage[u.ID]
 	if ok {
-		return -1, errors.New("user already exists")
+		return -1, ErrUserAlreadyExists
 	}
 
 	u.ID = int64(len(r.storage))
@@ -53,7 +58,7 @@ func (r *RepoMap) DeleteUser(_ context.Context, ID int64) error {
 
 	_, ok := r.storage[ID]
 	if ok {
-		return errors.New("user already exists")
+		return ErrNoUser
 	}
 
 	delete(r.storage, ID)
