@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -44,7 +43,6 @@ func TestCreateUser_InvalidEmail(t *testing.T) {
 	client := getTestClient()
 
 	_, err := client.createUser("jenny", "invalid_email")
-	fmt.Println()
 	assert.ErrorIs(t, err, ErrBadRequest)
 }
 

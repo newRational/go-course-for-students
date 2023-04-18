@@ -48,8 +48,8 @@ func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) 
 		Title:   title,
 		Text:    text,
 		UserID:  userID,
-		Created: time.Now(),
-		Updated: time.Now(),
+		Created: time.Now().UTC(),
+		Updated: time.Now().UTC(),
 	}
 	if err := vld.Validate(*ad); err != nil {
 		return nil, ErrBadRequest
