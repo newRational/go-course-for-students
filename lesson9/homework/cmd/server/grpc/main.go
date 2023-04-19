@@ -27,15 +27,14 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer(
+	server := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpcPort.UnaryLogInterceptor(),
 			recovery.UnaryServerInterceptor(),
 		),
 	)
-
-	srv := grpcPort.NewService(app.NewApp(adrepo.New(), userrepo.New()))
-	grpcPort.RegisterAdServiceServer(s, srv)
+	service := grpcPort.NewService(app.NewApp(adrepo.New(), userrepo.New()))
+	grpcPort.RegisterAdServiceServer(server, service)
 
 	eg, ctx := errgroup.WithContext(context.Background())
 
@@ -60,14 +59,14 @@ func main() {
 		errCh := make(chan error)
 
 		defer func() {
-			s.GracefulStop()
+			server.GracefulStop()
 			_ = lis.Close()
 
 			close(errCh)
 		}()
 
 		go func() {
-			if err := s.Serve(lis); err != nil {
+			if err := server.Serve(lis); err != nil {
 				errCh <- err
 			}
 		}()
@@ -79,9 +78,4 @@ func main() {
 			return fmt.Errorf("grpc server can't listen and serve requests: %w", err)
 		}
 	})
-
-	log.Printf("Starting gRPC listener on port " + port)
-	if err = s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
 }
