@@ -226,7 +226,8 @@ func (tc *testClient) deleteAd(userID, adID int64) error {
 		return fmt.Errorf("unable to create request: %w", err)
 	}
 
-	err = tc.getResponse(req, nil)
+	var response userResponse
+	err = tc.getResponse(req, &response)
 	if err != nil {
 		return err
 	}
@@ -310,7 +311,8 @@ func (tc *testClient) deleteUser(userID int64) error {
 		return fmt.Errorf("unable to create request: %w", err)
 	}
 
-	err = tc.getResponse(req, nil)
+	var response userResponse
+	err = tc.getResponse(req, &response)
 	if err != nil {
 		return err
 	}

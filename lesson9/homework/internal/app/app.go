@@ -20,12 +20,12 @@ type App interface {
 	AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, error)
 	UpdateAd(ctx context.Context, ID, userID int64, title, text string) (*ads.Ad, error)
 	ChangeAdStatus(ctx context.Context, ID, userID int64, published bool) (*ads.Ad, error)
-	DeleteAd(ctx context.Context, ID, userID int64) error
+	DeleteAd(ctx context.Context, ID, userID int64) (*ads.Ad, error)
 
 	CreateUser(ctx context.Context, nick, email string) (*users.User, error)
 	UserByID(ctx context.Context, ID int64) (*users.User, error)
 	UpdateUser(ctx context.Context, ID int64, nick, email string) (*users.User, error)
-	DeleteUser(ctx context.Context, ID int64) error
+	DeleteUser(ctx context.Context, ID int64) (*users.User, error)
 }
 
 type AdApp struct {
@@ -119,26 +119,26 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published 
 	return ad, nil
 }
 
-func (a *AdApp) DeleteAd(ctx context.Context, ID, userID int64) error {
+func (a *AdApp) DeleteAd(ctx context.Context, ID, userID int64) (*ads.Ad, error) {
 	_, err := a.userRepo.UserByID(ctx, userID)
 	if errors.Is(err, userrepo.ErrNoUser) {
-		return ErrBadRequest
+		return nil, ErrBadRequest
 	}
 
 	ad, err := a.adRepo.AdByID(ctx, ID)
 	if errors.Is(err, adrepo.ErrNoAd) {
-		return ErrBadRequest
+		return nil, ErrBadRequest
 	}
 
 	if ad.UserID != userID {
-		return ErrForbidden
+		return nil, ErrForbidden
 	}
 
 	if err = a.adRepo.DeleteAd(ctx, ID); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return ad, nil
 }
 
 func (a *AdApp) AdByID(ctx context.Context, ID int64) (*ads.Ad, error) {
@@ -203,15 +203,15 @@ func (a *AdApp) UserByID(ctx context.Context, ID int64) (*users.User, error) {
 	return u, nil
 }
 
-func (a *AdApp) DeleteUser(ctx context.Context, ID int64) error {
-	_, err := a.userRepo.UserByID(ctx, ID)
+func (a *AdApp) DeleteUser(ctx context.Context, ID int64) (*users.User, error) {
+	u, err := a.userRepo.UserByID(ctx, ID)
 	if errors.Is(err, userrepo.ErrNoUser) {
-		return ErrBadRequest
+		return nil, ErrBadRequest
 	}
 
 	if err = a.userRepo.DeleteUser(ctx, ID); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return u, nil
 }

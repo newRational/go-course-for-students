@@ -69,7 +69,7 @@ func (r *RepoMap) DeleteAd(_ context.Context, ID int64) error {
 	defer r.m.Unlock()
 
 	_, ok := r.storage[ID]
-	if ok {
+	if !ok {
 		return ErrNoAd
 	}
 

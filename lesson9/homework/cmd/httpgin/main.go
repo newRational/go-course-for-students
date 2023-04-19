@@ -23,10 +23,6 @@ const port = ":18080"
 
 func main() {
 	server := httpgin.NewHTTPServer(port, app.NewApp(adrepo.New(), userrepo.New()))
-	err := server.ListenAndServe()
-	if err != nil {
-		panic(err)
-	}
 
 	eg, ctx := errgroup.WithContext(context.Background())
 

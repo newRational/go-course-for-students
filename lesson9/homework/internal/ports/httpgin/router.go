@@ -13,7 +13,7 @@ func AppRouter(r gin.IRouter, a app.App) {
 	{
 		users.POST("", createUser(a))
 		users.PUT("/:user_id", updateUser(a))
-		users.GET("/:ad_id", showUser(a))
+		users.GET("/:user_id", showUser(a))
 		users.DELETE("/:user_id", deleteUser(a))
 	}
 

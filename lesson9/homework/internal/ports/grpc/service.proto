@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package ad;
 option go_package = "lesson9/homework/internal/ports/grpc";
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 service AdService {
@@ -13,8 +12,8 @@ service AdService {
   rpc ListAds(ListAdsRequest) returns (ListAdResponse) {}
   rpc CreateUser(CreateUserRequest) returns (UserResponse) {}
   rpc GetUser(GetUserRequest) returns (UserResponse) {}
-  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty) {}
-  rpc DeleteAd(DeleteAdRequest) returns (google.protobuf.Empty) {}
+  rpc DeleteUser(DeleteUserRequest) returns (UserResponse) {}
+  rpc DeleteAd(DeleteAdRequest) returns (AdResponse) {}
 }
 
 message CreateAdRequest {

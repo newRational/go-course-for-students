@@ -57,7 +57,7 @@ func (r *RepoMap) DeleteUser(_ context.Context, ID int64) error {
 	defer r.m.Unlock()
 
 	_, ok := r.storage[ID]
-	if ok {
+	if !ok {
 		return ErrNoUser
 	}
 

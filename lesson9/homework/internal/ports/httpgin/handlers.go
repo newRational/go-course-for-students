@@ -170,7 +170,7 @@ func deleteAd(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		err = a.DeleteAd(c, int64(adID), reqBody.UserID)
+		ad, err := a.DeleteAd(c, int64(adID), reqBody.UserID)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))
@@ -182,7 +182,7 @@ func deleteAd(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, AdSuccessResponse(ad))
 	}
 }
 
@@ -274,7 +274,7 @@ func deleteUser(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		err = a.DeleteUser(c, int64(userID))
+		u, err := a.DeleteUser(c, int64(userID))
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))
@@ -286,7 +286,7 @@ func deleteUser(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, UserSuccessResponse(u))
 	}
 }
 

@@ -6,8 +6,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"homework9/internal/ads"
 	"homework9/internal/app"
 )
@@ -134,24 +132,34 @@ func (s *Server) GetUser(ctx context.Context, req *GetUserRequest) (*UserRespons
 	}, nil
 }
 
-func (s *Server) DeleteUser(ctx context.Context, req *DeleteUserRequest) (*emptypb.Empty, error) {
-	err := s.app.DeleteUser(ctx, req.Id)
+func (s *Server) DeleteUser(ctx context.Context, req *DeleteUserRequest) (*UserResponse, error) {
+	u, err := s.app.DeleteUser(ctx, req.Id)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
 	}
 
-	return nil, nil
+	return &UserResponse{
+		Id:       u.ID,
+		Nickname: u.Nickname,
+		Email:    u.Email,
+	}, nil
 }
 
-func (s *Server) DeleteAd(ctx context.Context, req *DeleteAdRequest) (*emptypb.Empty, error) {
-	err := s.app.DeleteAd(ctx, req.AdId, req.UserId)
+func (s *Server) DeleteAd(ctx context.Context, req *DeleteAdRequest) (*AdResponse, error) {
+	ad, err := s.app.DeleteAd(ctx, req.AdId, req.UserId)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
 	} else if errors.Is(err, app.ErrForbidden) {
 		return nil, status.Error(codes.PermissionDenied, "Permission denied")
 	}
 
-	return nil, nil
+	return &AdResponse{
+		Id:        ad.ID,
+		Title:     ad.Title,
+		Text:      ad.Text,
+		UserId:    ad.UserID,
+		Published: ad.Published,
+	}, nil
 }
 
 // Метод для генерации шаблона для выборки объявлений

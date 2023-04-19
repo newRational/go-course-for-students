@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -22,7 +23,12 @@ func TestGRRPCCreateUser(t *testing.T) {
 		lis.Close()
 	})
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			grpcPort.UnaryLogInterceptor(),
+			recovery.UnaryServerInterceptor(),
+		),
+	)
 	t.Cleanup(func() {
 		s.Stop()
 	})
@@ -51,8 +57,9 @@ func TestGRRPCCreateUser(t *testing.T) {
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
-	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Nickname: "Oleg"})
+	res, err := client.CreateUser(ctx, &grpcPort.CreateUserRequest{Nickname: "Oleg", Email: "oleg@gmail.com"})
 	assert.NoError(t, err, "client.GetUser")
 
 	assert.Equal(t, "Oleg", res.Nickname)
+	assert.Equal(t, "oleg@gmail.com", res.Email)
 }
