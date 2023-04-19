@@ -264,30 +264,6 @@ func showUser(a app.App) gin.HandlerFunc {
 	}
 }
 
-// Метод для генерации шаблона для выборки объявлений
-func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error) {
-	f := ads.NewPattern()
-
-	f.Title = params.Title
-	f.Created = params.Created
-	if v, ok := c.GetQuery("user_id"); ok {
-		id, err := strconv.Atoi(v)
-		if err != nil {
-			return nil, err
-		}
-		f.UserID = int64(id)
-	}
-	if v, ok := c.GetQuery("published"); ok {
-		p, err := strconv.ParseBool(v)
-		if err != nil {
-			return nil, err
-		}
-		f.Published = p
-	}
-
-	return f, nil
-}
-
 // Метод для удаления пользователя по его ID
 func deleteUser(a app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -312,4 +288,28 @@ func deleteUser(a app.App) gin.HandlerFunc {
 
 		c.Status(http.StatusOK)
 	}
+}
+
+// Метод для генерации шаблона для выборки объявлений
+func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error) {
+	f := ads.NewPattern()
+
+	f.Title = params.Title
+	f.Created = params.Created
+	if v, ok := c.GetQuery("user_id"); ok {
+		id, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, err
+		}
+		f.UserID = int64(id)
+	}
+	if v, ok := c.GetQuery("published"); ok {
+		p, err := strconv.ParseBool(v)
+		if err != nil {
+			return nil, err
+		}
+		f.Published = p
+	}
+
+	return f, nil
 }

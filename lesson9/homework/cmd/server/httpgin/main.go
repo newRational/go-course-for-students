@@ -7,9 +7,11 @@ import (
 	"homework9/internal/ports/httpgin"
 )
 
+const port = ":18080"
+
 func main() {
-	server := httpgin.NewHTTPServer(":18080", app.NewApp(adrepo.New(), userrepo.New()))
-	err := server.Listen()
+	server := httpgin.NewHTTPServer(port, app.NewApp(adrepo.New(), userrepo.New()))
+	err := server.ListenAndServe()
 	if err != nil {
 		panic(err)
 	}

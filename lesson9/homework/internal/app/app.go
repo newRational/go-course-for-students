@@ -16,15 +16,15 @@ import (
 
 type App interface {
 	CreateAd(ctx context.Context, title, text string, userID int64) (*ads.Ad, error)
+	AdByID(ctx context.Context, ID int64) (*ads.Ad, error)
+	AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, error)
 	UpdateAd(ctx context.Context, ID, userID int64, title, text string) (*ads.Ad, error)
 	ChangeAdStatus(ctx context.Context, ID, userID int64, published bool) (*ads.Ad, error)
 	DeleteAd(ctx context.Context, ID, userID int64) error
-	AdByID(ctx context.Context, ID int64) (*ads.Ad, error)
-	AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, error)
 
 	CreateUser(ctx context.Context, nick, email string) (*users.User, error)
-	UpdateUser(ctx context.Context, ID int64, nick, email string) (*users.User, error)
 	UserByID(ctx context.Context, ID int64) (*users.User, error)
+	UpdateUser(ctx context.Context, ID int64, nick, email string) (*users.User, error)
 	DeleteUser(ctx context.Context, ID int64) error
 }
 
