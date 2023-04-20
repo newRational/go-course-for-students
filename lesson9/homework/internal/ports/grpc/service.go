@@ -101,7 +101,9 @@ func (s *Server) UpdateAd(ctx context.Context, req *UpdateAdRequest) (*AdRespons
 
 func (s *Server) ChangeAdStatus(ctx context.Context, req *ChangeAdStatusRequest) (*AdResponse, error) {
 	ad, err := s.app.ChangeAdStatus(ctx, req.AdId, req.UserId, req.Published)
-	if errors.Is(err, app.ErrForbidden) {
+	if errors.Is(err, app.ErrBadRequest) {
+		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if errors.Is(err, app.ErrForbidden) {
 		return nil, status.Error(codes.PermissionDenied, "Permission denied")
 	} else if err != nil {
 		return nil, status.Error(codes.Internal, "Internal server error")
