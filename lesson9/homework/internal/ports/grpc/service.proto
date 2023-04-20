@@ -6,14 +6,16 @@ import "google/protobuf/timestamp.proto";
 
 service AdService {
   rpc CreateAd(CreateAdRequest) returns (AdResponse) {}
-  rpc ChangeAdStatus(ChangeAdStatusRequest) returns (AdResponse) {}
-  rpc UpdateAd(UpdateAdRequest) returns (AdResponse) {}
   rpc GetAd(GetAdRequest) returns (AdResponse) {}
   rpc ListAds(ListAdsRequest) returns (ListAdResponse) {}
+  rpc UpdateAd(UpdateAdRequest) returns (AdResponse) {}
+  rpc ChangeAdStatus(ChangeAdStatusRequest) returns (AdResponse) {}
+  rpc DeleteAd(DeleteAdRequest) returns (AdResponse) {}
+
   rpc CreateUser(CreateUserRequest) returns (UserResponse) {}
   rpc GetUser(GetUserRequest) returns (UserResponse) {}
+  rpc UpdateUser(UpdateUserRequest) returns (UserResponse) {}
   rpc DeleteUser(DeleteUserRequest) returns (UserResponse) {}
-  rpc DeleteAd(DeleteAdRequest) returns (AdResponse) {}
 }
 
 message CreateAdRequest {
@@ -61,6 +63,12 @@ message ListAdResponse {
 message CreateUserRequest {
   string nickname = 1;
   string email = 2;
+}
+
+message UpdateUserRequest {
+  int64 id = 1;
+  string nickname = 2;
+  string email = 3;
 }
 
 message UserResponse {

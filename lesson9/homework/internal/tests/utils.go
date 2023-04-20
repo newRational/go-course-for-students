@@ -2,16 +2,26 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 
 	"homework9/internal/adapters/adrepo"
 	"homework9/internal/adapters/userrepo"
 	"homework9/internal/app"
+	grpcPort "homework9/internal/ports/grpc"
 	"homework9/internal/ports/httpgin"
 )
 
@@ -23,7 +33,6 @@ type adData struct {
 	Published bool   `json:"published"`
 }
 
-// added
 type userData struct {
 	ID       int64  `json:"id"`
 	Nickname string `json:"nickname"`
@@ -34,7 +43,6 @@ type adResponse struct {
 	Data adData `json:"data"`
 }
 
-// added
 type userResponse struct {
 	Data userData `json:"data"`
 }
@@ -48,22 +56,66 @@ var (
 	ErrForbidden  = fmt.Errorf("forbidden")
 )
 
-type testClient struct {
+type testHTTPClient struct {
 	client  *http.Client
 	baseURL string
 }
 
-func getTestClient() *testClient {
+func getTestHTTPClient() *testHTTPClient {
 	server := httpgin.NewHTTPServer(":18080", app.NewApp(adrepo.New(), userrepo.New()))
 	testServer := httptest.NewServer(server.Handler)
 
-	return &testClient{
+	return &testHTTPClient{
 		client:  testServer.Client(),
 		baseURL: testServer.URL,
 	}
 }
 
-func (tc *testClient) getResponse(req *http.Request, out any) error {
+func getTestGRCPClient(t *testing.T) (context.Context, grpcPort.AdServiceClient) {
+	lis := bufconn.Listen(1024 * 1024)
+	t.Cleanup(func() {
+		lis.Close()
+	})
+
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			grpcPort.UnaryLogInterceptor(),
+			recovery.UnaryServerInterceptor(),
+		),
+	)
+	t.Cleanup(func() {
+		s.Stop()
+	})
+
+	srv := grpcPort.NewService(app.NewApp(adrepo.New(), userrepo.New()))
+	grpcPort.RegisterAdServiceServer(s, srv)
+
+	go func() {
+		assert.NoError(t, s.Serve(lis), "s.Serve")
+	}()
+
+	dialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	t.Cleanup(func() {
+		cancel()
+	})
+
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	assert.NoError(t, err, "grpc.DialContext")
+
+	t.Cleanup(func() {
+		conn.Close()
+	})
+
+	client := grpcPort.NewAdServiceClient(conn)
+
+	return ctx, client
+}
+
+func (tc *testHTTPClient) getResponse(req *http.Request, out any) error {
 	resp, err := tc.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("unexpected error: %w", err)
@@ -92,7 +144,7 @@ func (tc *testClient) getResponse(req *http.Request, out any) error {
 	return nil
 }
 
-func (tc *testClient) createAd(userID int64, title string, text string) (adResponse, error) {
+func (tc *testHTTPClient) createAd(userID int64, title string, text string) (adResponse, error) {
 	body := map[string]any{
 		"user_id": userID,
 		"title":   title,
@@ -120,7 +172,7 @@ func (tc *testClient) createAd(userID int64, title string, text string) (adRespo
 	return response, nil
 }
 
-func (tc *testClient) changeAdStatus(userID int64, adID int64, published bool) (adResponse, error) {
+func (tc *testHTTPClient) changeAdStatus(userID int64, adID int64, published bool) (adResponse, error) {
 	body := map[string]any{
 		"user_id":   userID,
 		"published": published,
@@ -147,7 +199,7 @@ func (tc *testClient) changeAdStatus(userID int64, adID int64, published bool) (
 	return response, nil
 }
 
-func (tc *testClient) updateAd(userID int64, adID int64, title string, text string) (adResponse, error) {
+func (tc *testHTTPClient) updateAd(userID int64, adID int64, title string, text string) (adResponse, error) {
 	body := map[string]any{
 		"user_id": userID,
 		"title":   title,
@@ -175,7 +227,7 @@ func (tc *testClient) updateAd(userID int64, adID int64, title string, text stri
 	return response, nil
 }
 
-func (tc *testClient) showAd(adID int64) (adResponse, error) {
+func (tc *testHTTPClient) showAd(adID int64) (adResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d", adID), nil)
 	if err != nil {
 		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
@@ -190,7 +242,7 @@ func (tc *testClient) showAd(adID int64) (adResponse, error) {
 	return response, nil
 }
 
-func (tc *testClient) listAds(params map[string]string) (adsResponse, error) {
+func (tc *testHTTPClient) listAds(params map[string]string) (adsResponse, error) {
 	p := url.Values{}
 	for k, v := range params {
 		p.Add(k, v)
@@ -211,7 +263,7 @@ func (tc *testClient) listAds(params map[string]string) (adsResponse, error) {
 	return response, nil
 }
 
-func (tc *testClient) deleteAd(userID, adID int64) error {
+func (tc *testHTTPClient) deleteAd(userID, adID int64) error {
 	body := map[string]any{
 		"user_id": userID,
 	}
@@ -235,7 +287,7 @@ func (tc *testClient) deleteAd(userID, adID int64) error {
 	return nil
 }
 
-func (tc *testClient) createUser(nick, email string) (userResponse, error) {
+func (tc *testHTTPClient) createUser(nick, email string) (userResponse, error) {
 	body := map[string]any{
 		"nickname": nick,
 		"email":    email,
@@ -262,7 +314,7 @@ func (tc *testClient) createUser(nick, email string) (userResponse, error) {
 	return response, nil
 }
 
-func (tc *testClient) updateUser(userId int64, nick, email string) (userResponse, error) {
+func (tc *testHTTPClient) updateUser(userId int64, nick, email string) (userResponse, error) {
 	body := map[string]any{
 		"user_id":  userId,
 		"nickname": nick,
@@ -290,7 +342,7 @@ func (tc *testClient) updateUser(userId int64, nick, email string) (userResponse
 	return response, nil
 }
 
-func (tc *testClient) showUser(userID int64) (userResponse, error) {
+func (tc *testHTTPClient) showUser(userID int64) (userResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), nil)
 	if err != nil {
 		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
@@ -305,7 +357,7 @@ func (tc *testClient) showUser(userID int64) (userResponse, error) {
 	return response, nil
 }
 
-func (tc *testClient) deleteUser(userID int64) error {
+func (tc *testHTTPClient) deleteUser(userID int64) error {
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), nil)
 	if err != nil {
 		return fmt.Errorf("unable to create request: %w", err)

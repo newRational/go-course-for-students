@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateAdByNonExistentUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
@@ -19,7 +19,7 @@ func TestCreateAdByNonExistentUser(t *testing.T) {
 }
 
 func TestChangeStatusAdOfNonExistentUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")
@@ -33,7 +33,7 @@ func TestChangeStatusAdOfNonExistentUser(t *testing.T) {
 }
 
 func TestUpdateAdOfNonExistentUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	// create user
 	_, err := client.createUser("jenny", "jenny@gmail.com")

@@ -1,15 +1,12 @@
 package tests
 
 import (
-	"fmt"
-	"testing"
-	"time"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestShowAd(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -40,16 +37,13 @@ func TestShowAd(t *testing.T) {
 }
 
 func TestListAdsWithParams(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
 
 	_, err = client.createUser("polly", "polly@gmail.com")
 	assert.NoError(t, err)
-
-	tc := time.Now().UTC()
-	s := fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", tc.Year(), tc.Month(), tc.Day(), tc.Hour(), tc.Minute(), tc.Second())
 
 	ad0, err := client.createAd(0, "hello", "world")
 	assert.NoError(t, err)
@@ -66,7 +60,7 @@ func TestListAdsWithParams(t *testing.T) {
 	_, err = client.changeAdStatus(resp.Data.AuthorID, resp.Data.ID, true)
 	assert.NoError(t, err)
 
-	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0", "created": s})
+	ads, err := client.listAds(map[string]string{"published": "false", "title": "hello", "user_id": "0"})
 	assert.NoError(t, err)
 
 	assert.Len(t, ads.Data, 2)
@@ -76,7 +70,7 @@ func TestListAdsWithParams(t *testing.T) {
 }
 
 func TestDeleteAd(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -92,7 +86,7 @@ func TestDeleteAd(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -102,7 +96,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -114,7 +108,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestShowUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -138,7 +132,7 @@ func TestShowUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)

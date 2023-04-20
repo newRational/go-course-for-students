@@ -8,14 +8,14 @@ import (
 )
 
 func TestCreateUser_EmptyNickname(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("", "jenny@gmail.com")
 	assert.ErrorIs(t, err, ErrBadRequest)
 }
 
 func TestCreateUser_TooLongNickname(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	nick := strings.Repeat("a", 51)
 
@@ -24,14 +24,14 @@ func TestCreateUser_TooLongNickname(t *testing.T) {
 }
 
 func TestCreateUser_EmptyEmail(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "")
 	assert.ErrorIs(t, err, ErrBadRequest)
 }
 
 func TestCreateUser_TooLongEmail(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	username := strings.Repeat("a", 51)
 
@@ -40,14 +40,14 @@ func TestCreateUser_TooLongEmail(t *testing.T) {
 }
 
 func TestCreateUser_InvalidEmail(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	_, err := client.createUser("jenny", "invalid_email")
 	assert.ErrorIs(t, err, ErrBadRequest)
 }
 
 func TestUpdateUser_EmptyNickname(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestUpdateUser_EmptyNickname(t *testing.T) {
 }
 
 func TestUpdateUser_TooLongNickname(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestUpdateUser_TooLongNickname(t *testing.T) {
 }
 
 func TestUpdateUser_EmptyEmail(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -79,7 +79,7 @@ func TestUpdateUser_EmptyEmail(t *testing.T) {
 }
 
 func TestUpdateUser_TooLongEmail(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
@@ -91,7 +91,7 @@ func TestUpdateUser_TooLongEmail(t *testing.T) {
 }
 
 func TestUpdateUser_InvalidEmail(t *testing.T) {
-	client := getTestClient()
+	client := getTestHTTPClient()
 
 	resp, err := client.createUser("jenny", "jenny@gmail.com")
 	assert.NoError(t, err)
