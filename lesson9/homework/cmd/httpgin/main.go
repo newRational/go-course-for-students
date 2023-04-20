@@ -60,4 +60,10 @@ func main() {
 			return fmt.Errorf("http server can't listen and serve requests: %w", err)
 		}
 	})
+
+	if err := eg.Wait(); err != nil {
+		log.Printf("gracefully shutting down the servers: %s\n", err.Error())
+	}
+
+	log.Println("servers were successfully shutdown")
 }

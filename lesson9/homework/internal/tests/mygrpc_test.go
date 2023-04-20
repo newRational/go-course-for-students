@@ -1,11 +1,13 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/timestamppb"
-	grpcPort "homework9/internal/ports/grpc"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	grpcPort "homework9/internal/ports/grpc"
 )
 
 func TestGRPCCreateAd(t *testing.T) {

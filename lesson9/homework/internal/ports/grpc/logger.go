@@ -16,21 +16,19 @@ const (
 	reset   = "\033[0m"
 )
 
-func UnaryLogInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		start := time.Now()
+func UnaryLogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	start := time.Now()
 
-		h, err := handler(ctx, req)
+	h, err := handler(ctx, req)
 
-		log.SetPrefix("[ADAPP] (req) - ")
-		log.Printf(" - meth:"+cyan+"%s"+reset+" - dur:"+magenta+"%s"+reset+" - err:"+errColor(err)+"%v"+reset+"\n",
-			info.FullMethod,
-			time.Since(start),
-			err,
-		)
+	log.SetPrefix("[ADAPP] (req) - ")
+	log.Printf("- meth:"+cyan+"%s"+reset+" - dur:"+magenta+"%s"+reset+" - err:"+errColor(err)+"%v"+reset+"\n",
+		info.FullMethod,
+		time.Since(start),
+		err,
+	)
 
-		return h, err
-	}
+	return h, err
 }
 
 func errColor(err error) string {

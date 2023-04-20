@@ -27,12 +27,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	server := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(
-			grpcPort.UnaryLogInterceptor(),
-			recovery.UnaryServerInterceptor(),
-		),
-	)
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(grpcPort.UnaryLogInterceptor, recovery.UnaryServerInterceptor()))
 	service := grpcPort.NewService(app.NewApp(adrepo.New(), userrepo.New()))
 	grpcPort.RegisterAdServiceServer(server, service)
 
@@ -66,7 +61,7 @@ func main() {
 		}()
 
 		go func() {
-			if err := server.Serve(lis); err != nil {
+			if err = server.Serve(lis); err != nil {
 				errCh <- err
 			}
 		}()
@@ -74,8 +69,14 @@ func main() {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case err := <-errCh:
+		case err = <-errCh:
 			return fmt.Errorf("grpc server can't listen and serve requests: %w", err)
 		}
 	})
+
+	if err = eg.Wait(); err != nil {
+		log.Printf("gracefully shutting down the servers: %s\n", err.Error())
+	}
+
+	log.Println("servers were successfully shutdown")
 }
