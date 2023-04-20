@@ -12,7 +12,6 @@ import (
 )
 
 type Server struct {
-	UnimplementedAdServiceServer
 	app app.App
 }
 

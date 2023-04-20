@@ -133,7 +133,7 @@ func (c *adServiceClient) DeleteUser(ctx context.Context, in *DeleteUserRequest,
 }
 
 // AdServiceServer is the server API for AdService service.
-// All implementations must embed UnimplementedAdServiceServer
+// All implementations should embed UnimplementedAdServiceServer
 // for forward compatibility
 type AdServiceServer interface {
 	CreateAd(context.Context, *CreateAdRequest) (*AdResponse, error)
@@ -146,10 +146,9 @@ type AdServiceServer interface {
 	GetUser(context.Context, *GetUserRequest) (*UserResponse, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UserResponse, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*UserResponse, error)
-	mustEmbedUnimplementedAdServiceServer()
 }
 
-// UnimplementedAdServiceServer must be embedded to have forward compatible implementations.
+// UnimplementedAdServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedAdServiceServer struct {
 }
 
@@ -183,7 +182,6 @@ func (UnimplementedAdServiceServer) UpdateUser(context.Context, *UpdateUserReque
 func (UnimplementedAdServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
 }
-func (UnimplementedAdServiceServer) mustEmbedUnimplementedAdServiceServer() {}
 
 // UnsafeAdServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to AdServiceServer will
