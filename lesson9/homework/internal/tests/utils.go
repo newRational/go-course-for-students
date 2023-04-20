@@ -79,7 +79,7 @@ func getTestGRCPClient(t *testing.T) (context.Context, grpcPort.AdServiceClient)
 
 	s := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			grpcPort.UnaryLogInterceptor(),
+			grpcPort.UnaryLogInterceptor,
 			recovery.UnaryServerInterceptor(),
 		),
 	)
