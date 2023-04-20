@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"net"
 	"net/http"
@@ -74,7 +75,7 @@ func getTestHTTPClient() *testHTTPClient {
 func getTestGRCPClient(t *testing.T) (context.Context, grpcPort.AdServiceClient) {
 	lis := bufconn.Listen(1024 * 1024)
 	t.Cleanup(func() {
-		lis.Close()
+		_ = lis.Close()
 	})
 
 	s := grpc.NewServer(
@@ -103,11 +104,11 @@ func getTestGRCPClient(t *testing.T) (context.Context, grpcPort.AdServiceClient)
 		cancel()
 	})
 
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(dialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
-		conn.Close()
+		_ = conn.Close()
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)

@@ -21,7 +21,7 @@ import (
 func TestGRRPCCreateUser(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	t.Cleanup(func() {
-		lis.Close()
+		_ = lis.Close()
 	})
 
 	s := grpc.NewServer(
@@ -54,7 +54,7 @@ func TestGRRPCCreateUser(t *testing.T) {
 	assert.NoError(t, err, "grpc.DialContext")
 
 	t.Cleanup(func() {
-		conn.Close()
+		_ = conn.Close()
 	})
 
 	client := grpcPort.NewAdServiceClient(conn)
