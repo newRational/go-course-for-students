@@ -27,6 +27,8 @@ func (s *Server) CreateAd(ctx context.Context, req *CreateAdRequest) (*AdRespons
 	ad, err := s.app.CreateAd(ctx, req.Title, req.Text, req.UserId)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &AdResponse{
@@ -42,6 +44,8 @@ func (s *Server) GetAd(ctx context.Context, req *GetAdRequest) (*AdResponse, err
 	ad, err := s.app.AdByID(ctx, req.Id)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &AdResponse{
@@ -57,6 +61,8 @@ func (s *Server) ListAds(ctx context.Context, req *ListAdsRequest) (*ListAdRespo
 	adverts, err := s.app.AdsByPattern(ctx, createAdPattern(req))
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	var list []*AdResponse
@@ -81,6 +87,8 @@ func (s *Server) UpdateAd(ctx context.Context, req *UpdateAdRequest) (*AdRespons
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
 	} else if errors.Is(err, app.ErrForbidden) {
 		return nil, status.Error(codes.PermissionDenied, "Permission denied")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &AdResponse{
@@ -96,6 +104,8 @@ func (s *Server) ChangeAdStatus(ctx context.Context, req *ChangeAdStatusRequest)
 	ad, err := s.app.ChangeAdStatus(ctx, req.AdId, req.UserId, req.Published)
 	if errors.Is(err, app.ErrForbidden) {
 		return nil, status.Error(codes.PermissionDenied, "Permission denied")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &AdResponse{
@@ -113,6 +123,8 @@ func (s *Server) DeleteAd(ctx context.Context, req *DeleteAdRequest) (*AdRespons
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
 	} else if errors.Is(err, app.ErrForbidden) {
 		return nil, status.Error(codes.PermissionDenied, "Permission denied")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &AdResponse{
@@ -128,6 +140,8 @@ func (s *Server) CreateUser(ctx context.Context, req *CreateUserRequest) (*UserR
 	u, err := s.app.CreateUser(ctx, req.Nickname, req.Email)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &UserResponse{

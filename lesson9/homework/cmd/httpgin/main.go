@@ -65,5 +65,5 @@ func main() {
 		log.Printf("gracefully shutting down the servers: %s\n", err.Error())
 	}
 
-	log.Println("servers were successfully shutdown")
+	log.Println("server was successfully shutdown")
 }

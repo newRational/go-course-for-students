@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"google.golang.org/grpc/status"
 	"log"
 	"time"
 
@@ -21,17 +22,18 @@ func UnaryLogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInf
 
 	h, err := handler(ctx, req)
 
+	st, _ := status.FromError(err)
 	log.SetPrefix("[ADAPP] (req) - ")
-	log.Printf("- meth:"+cyan+"%s"+reset+" - dur:"+magenta+"%s"+reset+" - err:"+errColor(err)+"%v"+reset+"\n",
+	log.Printf("- <"+errCodeColor(err)+"%d"+reset+"> - meth:"+cyan+"%s"+reset+" - dur:"+magenta+"%s"+reset,
+		st.Code(),
 		info.FullMethod,
 		time.Since(start),
-		err,
 	)
 
 	return h, err
 }
 
-func errColor(err error) string {
+func errCodeColor(err error) string {
 	if err != nil {
 		return red
 	}
