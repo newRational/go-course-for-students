@@ -25,7 +25,7 @@ func TestGRRPCCreateUser(t *testing.T) {
 
 	s := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			grpcPort.UnaryLogInterceptor(),
+			grpcPort.UnaryLogInterceptor,
 			recovery.UnaryServerInterceptor(),
 		),
 	)
