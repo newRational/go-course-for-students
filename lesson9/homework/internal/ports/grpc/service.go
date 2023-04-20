@@ -154,6 +154,8 @@ func (s *Server) GetUser(ctx context.Context, req *GetUserRequest) (*UserRespons
 	u, err := s.app.UserByID(ctx, req.Id)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &UserResponse{
@@ -167,6 +169,8 @@ func (s *Server) UpdateUser(ctx context.Context, req *UpdateUserRequest) (*UserR
 	u, err := s.app.UpdateUser(ctx, req.Id, req.Nickname, req.Email)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &UserResponse{
@@ -180,6 +184,8 @@ func (s *Server) DeleteUser(ctx context.Context, req *DeleteUserRequest) (*UserR
 	u, err := s.app.DeleteUser(ctx, req.Id)
 	if errors.Is(err, app.ErrBadRequest) {
 		return nil, status.Error(codes.InvalidArgument, "Invalid argument")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "Internal server error")
 	}
 
 	return &UserResponse{
