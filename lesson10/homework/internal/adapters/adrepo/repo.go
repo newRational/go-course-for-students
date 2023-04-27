@@ -25,7 +25,7 @@ func New() ads.Repository {
 	}
 }
 
-func (r *RepoMap) AdByID(_ context.Context, ID int64) (ad *ads.Ad, err error) {
+func (r *RepoMap) AdByID(_ context.Context, ID int64) (*ads.Ad, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	ad, ok := r.storage[ID]
@@ -37,7 +37,7 @@ func (r *RepoMap) AdByID(_ context.Context, ID int64) (ad *ads.Ad, err error) {
 	return ad, nil
 }
 
-func (r *RepoMap) AddAd(_ context.Context, ad *ads.Ad) (ID int64, err error) {
+func (r *RepoMap) AddAd(_ context.Context, ad *ads.Ad) (int64, error) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
@@ -52,10 +52,12 @@ func (r *RepoMap) AddAd(_ context.Context, ad *ads.Ad) (ID int64, err error) {
 	return ad.ID, nil
 }
 
-func (r *RepoMap) AdsByPattern(_ context.Context, p *ads.Pattern) (adverts []*ads.Ad, err error) {
+func (r *RepoMap) AdsByPattern(_ context.Context, p *ads.Pattern) ([]*ads.Ad, error) {
+	var adverts []*ads.Ad
+
 	r.m.RLock()
 	for _, a := range r.storage {
-		if p.Match(a) {
+		if p.Fits(a) {
 			adverts = append(adverts, a)
 		}
 	}

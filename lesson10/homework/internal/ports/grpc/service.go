@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -199,19 +200,29 @@ func (s *Server) DeleteUser(ctx context.Context, req *DeleteUserRequest) (*UserR
 
 // Метод для генерации шаблона для выборки объявлений
 func createAdPattern(req *ListAdsRequest) *ads.Pattern {
-	f := ads.NewPattern()
+	f := ads.DefaultPattern()
 
 	if req.Title != nil {
-		f.Title = *req.Title
+		f.TitleFits = func(title string) bool {
+			return title == *req.Title
+		}
 	}
 	if req.Created != nil {
-		f.Created = req.Created.AsTime().UTC()
+		f.CreatedFits = func(created time.Time) bool {
+			pY, pM, pD := req.Created.AsTime().UTC().Date()
+			y, m, d := created.UTC().Date()
+			return y == pY && m == pM && d == pD
+		}
 	}
 	if req.UserId != nil {
-		f.UserID = *req.UserId
+		f.UserIDFits = func(userID int64) bool {
+			return userID == *req.UserId
+		}
 	}
 	if req.Published != nil {
-		f.Published = *req.Published
+		f.PublishedFits = func(published bool) bool {
+			return published == *req.Published
+		}
 	}
 
 	return f

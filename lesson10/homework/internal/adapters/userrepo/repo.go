@@ -25,7 +25,7 @@ func New() users.Repository {
 	}
 }
 
-func (r *RepoMap) UserByID(_ context.Context, ID int64) (u *users.User, err error) {
+func (r *RepoMap) UserByID(_ context.Context, ID int64) (*users.User, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	u, ok := r.storage[ID]
@@ -37,7 +37,7 @@ func (r *RepoMap) UserByID(_ context.Context, ID int64) (u *users.User, err erro
 	return u, nil
 }
 
-func (r *RepoMap) AddUser(_ context.Context, u *users.User) (ID int64, err error) {
+func (r *RepoMap) AddUser(_ context.Context, u *users.User) (int64, error) {
 	r.m.Lock()
 	defer r.m.Unlock()
 

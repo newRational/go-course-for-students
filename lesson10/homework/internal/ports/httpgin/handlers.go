@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -293,23 +294,33 @@ func deleteUser(a app.App) gin.HandlerFunc {
 
 // Метод для генерации шаблона для выборки объявлений
 func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error) {
-	f := ads.NewPattern()
+	f := ads.DefaultPattern()
 
-	f.Title = params.Title
-	f.Created = params.Created
+	f.TitleFits = func(title string) bool {
+		return params.Title == title
+	}
+	f.CreatedFits = func(created time.Time) bool {
+		pY, pM, pD := params.Created.UTC().Date()
+		y, m, d := created.UTC().Date()
+		return y == pY && m == pM && d == pD
+	}
 	if v, ok := c.GetQuery("user_id"); ok {
 		id, err := strconv.Atoi(v)
 		if err != nil {
 			return nil, err
 		}
-		f.UserID = int64(id)
+		f.UserIDFits = func(userID int64) bool {
+			return int64(id) == userID
+		}
 	}
 	if v, ok := c.GetQuery("published"); ok {
 		p, err := strconv.ParseBool(v)
 		if err != nil {
 			return nil, err
 		}
-		f.Published = p
+		f.PublishedFits = func(published bool) bool {
+			return published == p
+		}
 	}
 
 	return f, nil
