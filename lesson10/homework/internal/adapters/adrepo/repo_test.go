@@ -1,4 +1,4 @@
-package adrepo_test
+package adrepo
 
 import (
 	"context"
@@ -9,34 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"homework10/internal/adapters/adrepo"
 	"homework10/internal/ads"
 )
 
-type EmptyRepoTestSuite struct {
-	suite.Suite
-	repo ads.Repository
-}
-
-type FilledRepoTestSuite struct {
+type RepoTestSuite struct {
 	suite.Suite
 	repo   ads.Repository
 	filled time.Time
 }
 
-type RepoTest struct {
-	name    string
-	in      any
-	wantVal any
-	wantErr error
-}
-
-func (s *EmptyRepoTestSuite) SetupTest() {
-	s.repo = adrepo.New()
-}
-
-func (s *FilledRepoTestSuite) SetupTest() {
-	s.repo = adrepo.New()
+func (s *RepoTestSuite) SetupTest() {
+	s.repo = New()
 	s.filled = time.Now()
 	for i := 0; i < 12; i++ {
 		_, _ = s.repo.AddAd(context.Background(), &ads.Ad{
@@ -51,59 +34,89 @@ func (s *FilledRepoTestSuite) SetupTest() {
 	}
 }
 
-func (s *EmptyRepoTestSuite) TestAddAd() {
-	tests := []RepoTest{
+func (s *RepoTestSuite) TestAddAd() {
+	type args struct {
+		ctx context.Context
+		ad  *ads.Ad
+	}
+	tests := []struct {
+		name string
+		args args
+		want int64
+		err  error
+	}{
 		{
-			name: "ok add 0th ad",
-			in: &ads.Ad{
-				ID:    -1,
-				Title: "0th ad title",
-				Text:  "0th ad text",
+			name: "ok add 12th ad",
+			args: args{
+				ctx: context.Background(),
+				ad: &ads.Ad{
+					ID:    -1,
+					Title: "12th ad title",
+					Text:  "12th ad text",
+				},
 			},
-			wantVal: int64(0),
-			wantErr: nil,
+			want: 12,
+			err:  nil,
 		},
 		{
-			name: "ok add 1th ad",
-			in: &ads.Ad{
-				ID:    -1,
-				Title: "1st ad title",
-				Text:  "1st ad text",
+			name: "ok add 13th ad",
+			args: args{
+				ctx: context.Background(),
+				ad: &ads.Ad{
+					ID:    -1,
+					Title: "13th ad title",
+					Text:  "13th ad text",
+				},
 			},
-			wantVal: int64(1),
-			wantErr: nil,
+			want: 13,
+			err:  nil,
 		},
 		{
-			name: "wrong add 2nd ad (given ID=0)",
-			in: &ads.Ad{
-				ID:    0,
-				Title: "again 0th ad title",
-				Text:  "again 0th ad text",
+			name: "wrong add 14th ad (given ID=0)",
+			args: args{
+				ctx: context.Background(),
+				ad: &ads.Ad{
+					ID:    0,
+					Title: "14th ad title",
+					Text:  "14th ad text",
+				},
 			},
-			wantVal: int64(-1),
-			wantErr: adrepo.ErrAdAlreadyExists,
+			want: -1,
+			err:  ErrAdAlreadyExists,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
-			ID, err := s.repo.AddAd(context.Background(), tt.in.(*ads.Ad))
+			ID, err := s.repo.AddAd(tt.args.ctx, tt.args.ad)
 			if err != nil {
-				assert.ErrorIs(t, err, adrepo.ErrAdAlreadyExists)
+				assert.ErrorIs(t, err, tt.err)
 				assert.Equal(t, int64(-1), ID)
 			} else {
-				assert.Equal(t, tt.wantVal.(int64), ID)
+				assert.Equal(t, tt.want, ID)
 			}
 		})
 	}
 }
 
-func (s *FilledRepoTestSuite) TestAdByID() {
-	tests := []RepoTest{
+func (s *RepoTestSuite) TestAdByID() {
+	type args struct {
+		ctx context.Context
+		ID  int64
+	}
+	tests := []struct {
+		name string
+		args args
+		want *ads.Ad
+		err  error
+	}{
 		{
 			name: "ok get ad by ID=0",
-			in:   int64(0),
-			wantVal: &ads.Ad{
+			args: args{
+				ctx: context.Background(),
+				ID:  0,
+			},
+			want: &ads.Ad{
 				ID:        0,
 				Title:     fmt.Sprintf("title in group %d", 0%3),
 				Text:      fmt.Sprintf("%d ad text", 0),
@@ -112,12 +125,15 @@ func (s *FilledRepoTestSuite) TestAdByID() {
 				Created:   s.filled,
 				Updated:   s.filled,
 			},
-			wantErr: nil,
+			err: nil,
 		},
 		{
 			name: "ok get ad by ID=5",
-			in:   int64(5),
-			wantVal: &ads.Ad{
+			args: args{
+				ctx: context.Background(),
+				ID:  5,
+			},
+			want: &ads.Ad{
 				ID:        5,
 				Title:     fmt.Sprintf("title in group %d", 5%3),
 				Text:      fmt.Sprintf("%d ad text", 5),
@@ -129,8 +145,11 @@ func (s *FilledRepoTestSuite) TestAdByID() {
 		},
 		{
 			name: "ok get ad by ID=11",
-			in:   int64(11),
-			wantVal: &ads.Ad{
+			args: args{
+				ctx: context.Background(),
+				ID:  11,
+			},
+			want: &ads.Ad{
 				ID:        11,
 				Title:     fmt.Sprintf("title in group %d", 11%3),
 				Text:      fmt.Sprintf("%d ad text", 11),
@@ -141,42 +160,57 @@ func (s *FilledRepoTestSuite) TestAdByID() {
 			},
 		},
 		{
-			name:    "wrong get ad by ID=12",
-			in:      int64(12),
-			wantVal: nil,
-			wantErr: adrepo.ErrNoAd,
+			name: "wrong get ad by ID=12",
+			args: args{
+				ctx: context.Background(),
+				ID:  12,
+			},
+			want: nil,
+			err:  ErrNoAd,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
-			ad, err := s.repo.AdByID(context.Background(), tt.in.(int64))
+			ad, err := s.repo.AdByID(tt.args.ctx, tt.args.ID)
 			if err != nil {
-				assert.ErrorIs(t, err, adrepo.ErrNoAd)
+				assert.ErrorIs(t, err, tt.err)
 				assert.Nil(t, ad)
 			} else {
-				assert.Equal(t, tt.wantVal.(*ads.Ad).ID, ad.ID)
-				assert.Equal(t, tt.wantVal.(*ads.Ad).Title, ad.Title)
-				assert.Equal(t, tt.wantVal.(*ads.Ad).Text, ad.Text)
-				assert.Equal(t, tt.wantVal.(*ads.Ad).UserID, ad.UserID)
-				assert.Equal(t, tt.wantVal.(*ads.Ad).Published, ad.Published)
+				assert.Equal(t, tt.want.ID, ad.ID)
+				assert.Equal(t, tt.want.Title, ad.Title)
+				assert.Equal(t, tt.want.Text, ad.Text)
+				assert.Equal(t, tt.want.UserID, ad.UserID)
+				assert.Equal(t, tt.want.Published, ad.Published)
 			}
 		})
 	}
 }
 
-func (s *FilledRepoTestSuite) TestAdsByPattern() {
-	tests := []RepoTest{
+func (s *RepoTestSuite) TestAdsByPattern() {
+	type args struct {
+		ctx context.Context
+		pat *ads.Pattern
+	}
+	tests := []struct {
+		name string
+		args args
+		want []*ads.Ad
+		err  error
+	}{
 		{
 			name: "ok get ads by pattern with title=\"title in group 1\" and userID=1",
-			in: ads.DefaultPattern().
-				SetTitleFits(func(title string) bool {
-					return title == "title in group 1"
-				}).
-				SetUserIDFits(func(userID int64) bool {
-					return userID == 1
-				}),
-			wantVal: []*ads.Ad{
+			args: args{
+				ctx: context.Background(),
+				pat: ads.DefaultPattern().
+					SetTitleFits(func(title string) bool {
+						return title == "title in group 1"
+					}).
+					SetUserIDFits(func(userID int64) bool {
+						return userID == 1
+					}),
+			},
+			want: []*ads.Ad{
 				{
 					ID:        4,
 					Title:     fmt.Sprintf("title in group %d", 4%3),
@@ -196,20 +230,23 @@ func (s *FilledRepoTestSuite) TestAdsByPattern() {
 					Updated:   s.filled,
 				},
 			},
-			wantErr: nil,
+			err: nil,
 		},
 		{
 			name: "ok get ads by pattern with published=true and created=s.filled",
-			in: ads.DefaultPattern().
-				SetPublishedFits(func(published bool) bool {
-					return published
-				}).
-				SetCreatedFits(func(created time.Time) bool {
-					pY, pM, pD := s.filled.UTC().Date()
-					y, m, d := created.UTC().Date()
-					return y == pY && m == pM && d == pD
-				}),
-			wantVal: []*ads.Ad{
+			args: args{
+				ctx: context.Background(),
+				pat: ads.DefaultPattern().
+					SetPublishedFits(func(published bool) bool {
+						return published
+					}).
+					SetCreatedFits(func(created time.Time) bool {
+						pY, pM, pD := s.filled.UTC().Date()
+						y, m, d := created.UTC().Date()
+						return y == pY && m == pM && d == pD
+					}),
+			},
+			want: []*ads.Ad{
 				{
 					ID:        0,
 					Title:     fmt.Sprintf("title in group %d", 0%3),
@@ -265,20 +302,23 @@ func (s *FilledRepoTestSuite) TestAdsByPattern() {
 					Updated:   s.filled,
 				},
 			},
-			wantErr: nil,
+			err: nil,
 		},
 		{
 			name: "ok get ads by pattern with userID=2 and updated=s.filled",
-			in: ads.DefaultPattern().
-				SetUserIDFits(func(userID int64) bool {
-					return userID == 2
-				}).
-				SetUpdatedFits(func(updated time.Time) bool {
-					pY, pM, pD := s.filled.UTC().Date()
-					y, m, d := updated.UTC().Date()
-					return y == pY && m == pM && d == pD
-				}),
-			wantVal: []*ads.Ad{
+			args: args{
+				ctx: context.Background(),
+				pat: ads.DefaultPattern().
+					SetUserIDFits(func(userID int64) bool {
+						return userID == 2
+					}).
+					SetUpdatedFits(func(updated time.Time) bool {
+						pY, pM, pD := s.filled.UTC().Date()
+						y, m, d := updated.UTC().Date()
+						return y == pY && m == pM && d == pD
+					}),
+			},
+			want: []*ads.Ad{
 				{
 					ID:        8,
 					Title:     fmt.Sprintf("title in group %d", 8%3),
@@ -316,62 +356,78 @@ func (s *FilledRepoTestSuite) TestAdsByPattern() {
 					Updated:   s.filled,
 				},
 			},
-			wantErr: nil,
+			err: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
-			adverts, _ := s.repo.AdsByPattern(context.Background(), tt.in.(*ads.Pattern))
-			assert.Len(t, adverts, len(tt.wantVal.([]*ads.Ad)))
+			adverts, _ := s.repo.AdsByPattern(tt.args.ctx, tt.args.pat)
+			assert.Len(t, adverts, len(tt.want))
 			for i := range adverts {
-				assert.Contains(t, adverts, tt.wantVal.([]*ads.Ad)[i])
+				assert.Contains(t, adverts, tt.want[i])
 			}
 		})
 	}
 }
 
-func (s *FilledRepoTestSuite) TestDeleteAd() {
-	tests := []RepoTest{
+func (s *RepoTestSuite) TestDeleteAd() {
+	type args struct {
+		ctx context.Context
+		ID  int64
+	}
+	tests := []struct {
+		name string
+		args args
+		err  error
+	}{
 		{
-			name:    "ok delete ad by ID=3",
-			in:      int64(3),
-			wantErr: nil,
+			name: "ok delete ad by ID=3",
+			args: args{
+				ctx: context.Background(),
+				ID:  3,
+			},
+			err: nil,
 		},
 		{
-			name:    "ok delete ad by ID=11",
-			in:      int64(11),
-			wantErr: nil,
+			name: "ok delete ad by ID=11",
+			args: args{
+				ctx: context.Background(),
+				ID:  11,
+			},
+			err: nil,
 		},
 		{
-			name:    "wrong delete ad by ID=12",
-			in:      int64(12),
-			wantErr: adrepo.ErrNoAd,
+			name: "wrong delete ad by ID=12",
+			args: args{
+				ctx: context.Background(),
+				ID:  12,
+			},
+			err: ErrNoAd,
 		},
 		{
-			name:    "wrong delete ad by ID=100",
-			in:      int64(100),
-			wantErr: adrepo.ErrNoAd,
+			name: "wrong delete ad by ID=100",
+			args: args{
+				ctx: context.Background(),
+				ID:  100,
+			},
+			err: ErrNoAd,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
-			err := s.repo.DeleteAd(context.Background(), tt.in.(int64))
+			err := s.repo.DeleteAd(tt.args.ctx, tt.args.ID)
 			if err != nil {
-				assert.ErrorIs(t, err, adrepo.ErrNoAd)
+				assert.ErrorIs(t, err, tt.err)
 			} else {
-				_, err = s.repo.AdByID(context.Background(), tt.in.(int64))
-				assert.ErrorIs(t, err, adrepo.ErrNoAd)
+				_, err = s.repo.AdByID(tt.args.ctx, tt.args.ID)
+				assert.ErrorIs(t, err, ErrNoAd)
 			}
 		})
 	}
 }
 
-func TestEmptyRepoTestSuite(t *testing.T) {
-	suite.Run(t, new(EmptyRepoTestSuite))
-}
-
-func TestFilledRepoTestSuite(t *testing.T) {
-	suite.Run(t, new(FilledRepoTestSuite))
+func TestRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(RepoTestSuite))
 }

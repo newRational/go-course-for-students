@@ -34,8 +34,10 @@ type AdApp struct {
 }
 
 var (
-	ErrBadRequest = fmt.Errorf("bad request")
-	ErrForbidden  = fmt.Errorf("forbidden")
+	ErrBadRequest            = fmt.Errorf("bad request")
+	ErrForbidden             = fmt.Errorf("forbidden")
+	ErrInternalAdRepoError   = fmt.Errorf("internal ad repo error")
+	ErrInternalUserRepoError = fmt.Errorf("internal user repo error")
 )
 
 func NewApp(adRepo ads.Repository, userRepo users.Repository) App {
@@ -49,6 +51,8 @@ func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) 
 	_, err := a.userRepo.UserByID(ctx, userID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	ad := &ads.Ad{
@@ -64,8 +68,10 @@ func (a *AdApp) CreateAd(ctx context.Context, title, text string, userID int64) 
 	}
 
 	id, err := a.adRepo.AddAd(ctx, ad)
-	if err != nil {
-		return nil, err
+	if errors.Is(err, adrepo.ErrAdAlreadyExists) {
+		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalAdRepoError
 	}
 
 	ad.ID = id
@@ -76,11 +82,15 @@ func (a *AdApp) UpdateAd(ctx context.Context, ID, userID int64, title, text stri
 	_, err := a.userRepo.UserByID(ctx, userID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	ad, err := a.adRepo.AdByID(ctx, ID)
 	if errors.Is(err, adrepo.ErrNoAd) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalAdRepoError
 	}
 
 	if ad.UserID != userID {
@@ -93,7 +103,7 @@ func (a *AdApp) UpdateAd(ctx context.Context, ID, userID int64, title, text stri
 
 	ad.Text = text
 	ad.Title = title
-	ad.Updated = time.Now()
+	ad.Updated = time.Now().UTC()
 
 	return ad, nil
 }
@@ -102,11 +112,15 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published 
 	_, err := a.userRepo.UserByID(ctx, userID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	ad, err := a.adRepo.AdByID(ctx, ID)
 	if errors.Is(err, adrepo.ErrNoAd) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalAdRepoError
 	}
 
 	if ad.UserID != userID {
@@ -114,7 +128,7 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, ID, userID int64, published 
 	}
 
 	ad.Published = published
-	ad.Updated = time.Now()
+	ad.Updated = time.Now().UTC()
 
 	return ad, nil
 }
@@ -123,11 +137,15 @@ func (a *AdApp) DeleteAd(ctx context.Context, ID, userID int64) (*ads.Ad, error)
 	_, err := a.userRepo.UserByID(ctx, userID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	ad, err := a.adRepo.AdByID(ctx, ID)
 	if errors.Is(err, adrepo.ErrNoAd) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalAdRepoError
 	}
 
 	if ad.UserID != userID {
@@ -135,7 +153,7 @@ func (a *AdApp) DeleteAd(ctx context.Context, ID, userID int64) (*ads.Ad, error)
 	}
 
 	if err = a.adRepo.DeleteAd(ctx, ID); err != nil {
-		return nil, err
+		return nil, ErrInternalAdRepoError
 	}
 
 	return ad, nil
@@ -145,6 +163,8 @@ func (a *AdApp) AdByID(ctx context.Context, ID int64) (*ads.Ad, error) {
 	ad, err := a.adRepo.AdByID(ctx, ID)
 	if errors.Is(err, adrepo.ErrNoAd) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalAdRepoError
 	}
 
 	return ad, nil
@@ -154,6 +174,8 @@ func (a *AdApp) AdsByPattern(ctx context.Context, p *ads.Pattern) ([]*ads.Ad, er
 	adverts, err := a.adRepo.AdsByPattern(ctx, p)
 	if errors.Is(err, adrepo.ErrNoAd) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalAdRepoError
 	}
 
 	return adverts, nil
@@ -165,13 +187,16 @@ func (a *AdApp) CreateUser(ctx context.Context, nick, email string) (*users.User
 		Nickname: nick,
 		Email:    email,
 	}
+
 	if err := vld.Validate(*u); err != nil {
 		return nil, ErrBadRequest
 	}
 
 	id, err := a.userRepo.AddUser(ctx, u)
-	if err != nil {
-		return nil, err
+	if errors.Is(err, userrepo.ErrUserAlreadyExists) {
+		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	u.ID = id
@@ -182,6 +207,8 @@ func (a *AdApp) UpdateUser(ctx context.Context, ID int64, nick, email string) (*
 	u, err := a.userRepo.UserByID(ctx, ID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	if err = vld.Validate(users.User{Nickname: nick, Email: email}); err != nil {
@@ -198,6 +225,8 @@ func (a *AdApp) UserByID(ctx context.Context, ID int64) (*users.User, error) {
 	u, err := a.userRepo.UserByID(ctx, ID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	return u, nil
@@ -207,10 +236,12 @@ func (a *AdApp) DeleteUser(ctx context.Context, ID int64) (*users.User, error) {
 	u, err := a.userRepo.UserByID(ctx, ID)
 	if errors.Is(err, userrepo.ErrNoUser) {
 		return nil, ErrBadRequest
+	} else if err != nil {
+		return nil, ErrInternalUserRepoError
 	}
 
 	if err = a.userRepo.DeleteUser(ctx, ID); err != nil {
-		return nil, err
+		return nil, ErrInternalUserRepoError
 	}
 
 	return u, nil
