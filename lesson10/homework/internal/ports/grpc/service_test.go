@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -206,6 +207,12 @@ func TestGRPCService_ListAds(t *testing.T) {
 	a := mocks.NewApp(t)
 	s := NewService(a)
 
+	listAdsRequestFields := struct {
+		title     string
+		created   timestamppb.Timestamp
+		userID    int64
+		published bool
+	}{}
 	type args struct {
 		ctx context.Context
 		req *ListAdsRequest
@@ -254,7 +261,12 @@ func TestGRPCService_ListAds(t *testing.T) {
 			name: "ok",
 			args: args{
 				ctx: context.Background(),
-				req: &ListAdsRequest{},
+				req: &ListAdsRequest{
+					Title:     &listAdsRequestFields.title,
+					Created:   &listAdsRequestFields.created,
+					UserId:    &listAdsRequestFields.userID,
+					Published: &listAdsRequestFields.published,
+				},
 			},
 			setMock: func() {
 				a.
@@ -817,6 +829,180 @@ func TestGRPCService_GetUser(t *testing.T) {
 	for _, tt := range tests {
 		tt.setMock()
 		resp, err := s.GetUser(tt.args.ctx, tt.args.req)
+		if tt.wantErr {
+			assert.ErrorIs(t, err, tt.err)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.Id, resp.Id)
+			assert.Equal(t, tt.want.Nickname, resp.Nickname)
+			assert.Equal(t, tt.want.Email, resp.Email)
+		}
+	}
+}
+
+func TestGRPCService_UpdateUser(t *testing.T) {
+	a := mocks.NewApp(t)
+	s := NewService(a)
+
+	type args struct {
+		ctx context.Context
+		req *UpdateUserRequest
+	}
+	tests := []struct {
+		name    string
+		args    args
+		setMock func()
+		want    *UserResponse
+		wantErr bool
+		err     error
+	}{
+		{
+			name: "invalid argument error",
+			args: args{
+				ctx: context.Background(),
+				req: &UpdateUserRequest{},
+			},
+			setMock: func() {
+				a.
+					On("UpdateUser", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Return(nil, app.ErrBadRequest).
+					Once()
+			},
+			want:    nil,
+			wantErr: true,
+			err:     status.Error(codes.InvalidArgument, "Invalid argument"),
+		},
+		{
+			name: "internal error",
+			args: args{
+				ctx: context.Background(),
+				req: &UpdateUserRequest{},
+			},
+			setMock: func() {
+				a.
+					On("UpdateUser", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Return(nil, fmt.Errorf("some internal error")).
+					Once()
+			},
+			want:    nil,
+			wantErr: true,
+			err:     status.Error(codes.Internal, "Internal server error"),
+		},
+		{
+			name: "ok",
+			args: args{
+				ctx: context.Background(),
+				req: &UpdateUserRequest{},
+			},
+			setMock: func() {
+				a.
+					On("UpdateUser", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					Return(&users.User{
+						ID:       0,
+						Nickname: "user",
+						Email:    "user@gmail.com",
+					}, nil).
+					Once()
+			},
+			want: &UserResponse{
+				Id:       0,
+				Nickname: "user",
+				Email:    "user@gmail.com",
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		tt.setMock()
+		resp, err := s.UpdateUser(tt.args.ctx, tt.args.req)
+		if tt.wantErr {
+			assert.ErrorIs(t, err, tt.err)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.Id, resp.Id)
+			assert.Equal(t, tt.want.Nickname, resp.Nickname)
+			assert.Equal(t, tt.want.Email, resp.Email)
+		}
+	}
+}
+
+func TestGRPCService_DeleteUser(t *testing.T) {
+	a := mocks.NewApp(t)
+	s := NewService(a)
+
+	type args struct {
+		ctx context.Context
+		req *DeleteUserRequest
+	}
+	tests := []struct {
+		name    string
+		args    args
+		setMock func()
+		want    *UserResponse
+		wantErr bool
+		err     error
+	}{
+		{
+			name: "invalid argument error",
+			args: args{
+				ctx: context.Background(),
+				req: &DeleteUserRequest{},
+			},
+			setMock: func() {
+				a.
+					On("DeleteUser", mock.Anything, mock.Anything).
+					Return(nil, app.ErrBadRequest).
+					Once()
+			},
+			want:    nil,
+			wantErr: true,
+			err:     status.Error(codes.InvalidArgument, "Invalid argument"),
+		},
+		{
+			name: "internal error",
+			args: args{
+				ctx: context.Background(),
+				req: &DeleteUserRequest{},
+			},
+			setMock: func() {
+				a.
+					On("DeleteUser", mock.Anything, mock.Anything).
+					Return(nil, fmt.Errorf("some internal error")).
+					Once()
+			},
+			want:    nil,
+			wantErr: true,
+			err:     status.Error(codes.Internal, "Internal server error"),
+		},
+		{
+			name: "ok",
+			args: args{
+				ctx: context.Background(),
+				req: &DeleteUserRequest{},
+			},
+			setMock: func() {
+				a.
+					On("DeleteUser", mock.Anything, mock.Anything).
+					Return(&users.User{
+						ID:       0,
+						Nickname: "user",
+						Email:    "user@gmail.com",
+					}, nil).
+					Once()
+			},
+			want: &UserResponse{
+				Id:       0,
+				Nickname: "user",
+				Email:    "user@gmail.com",
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		tt.setMock()
+		resp, err := s.DeleteUser(tt.args.ctx, tt.args.req)
 		if tt.wantErr {
 			assert.ErrorIs(t, err, tt.err)
 		} else {
