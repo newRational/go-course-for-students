@@ -3,17 +3,18 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
-	"homework10/internal/adapters/adrepo"
-	"homework10/internal/adapters/userrepo"
-	"homework10/internal/ads"
-	"homework10/internal/users"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
+	"homework10/internal/adapters/adrepo"
+	"homework10/internal/adapters/userrepo"
+	"homework10/internal/ads"
 	adrepoMock "homework10/internal/ads/mocks"
+	"homework10/internal/users"
 	userrepoMock "homework10/internal/users/mocks"
 )
 

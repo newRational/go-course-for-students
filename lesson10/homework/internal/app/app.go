@@ -14,6 +14,7 @@ import (
 	"github.com/newRational/vld"
 )
 
+//go:generate mockery --name App
 type App interface {
 	CreateAd(ctx context.Context, title, text string, userID int64) (*ads.Ad, error)
 	AdByID(ctx context.Context, ID int64) (*ads.Ad, error)
