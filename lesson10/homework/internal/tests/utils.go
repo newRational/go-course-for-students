@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"net"
@@ -61,15 +60,6 @@ var (
 type testHTTPClient struct {
 	client  *http.Client
 	baseURL string
-}
-
-func newSimpleHTTPServer(port string, a app.App) *http.Server {
-	gin.SetMode(gin.ReleaseMode)
-	handler := gin.New()
-	httpgin.AppRouter(handler, a)
-	s := &http.Server{Addr: port, Handler: handler}
-
-	return s
 }
 
 func getTestHTTPClient() *testHTTPClient {
