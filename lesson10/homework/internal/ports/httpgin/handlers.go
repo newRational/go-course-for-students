@@ -19,7 +19,6 @@ func createAd(a app.App) gin.HandlerFunc {
 		err := c.Bind(&reqBody)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResponse(err))
-
 			return
 		}
 
@@ -80,9 +79,14 @@ func updateAd(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		adID := c.GetInt64("ad_id")
+		v := c.Param("ad_id")
+		adID, err := strconv.Atoi(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
+		}
 
-		ad, err := a.UpdateAd(c, adID, reqBody.UserID, reqBody.Title, reqBody.Text)
+		ad, err := a.UpdateAd(c, int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))
@@ -141,6 +145,7 @@ func listAds(a app.App) gin.HandlerFunc {
 		}
 
 		adverts, err := a.AdsByPattern(c, p)
+
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))
@@ -223,9 +228,14 @@ func updateUser(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		userID := c.GetInt64("user_id")
+		v := c.Param("user_id")
+		userID, err := strconv.Atoi(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse(err))
+			return
+		}
 
-		u, err := a.UpdateUser(c, userID, reqBody.Nickname, reqBody.Email)
+		u, err := a.UpdateUser(c, int64(userID), reqBody.Nickname, reqBody.Email)
 		if err != nil {
 			if errors.Is(err, app.ErrForbidden) {
 				c.JSON(http.StatusForbidden, ErrorResponse(err))
@@ -296,14 +306,20 @@ func deleteUser(a app.App) gin.HandlerFunc {
 func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error) {
 	f := ads.DefaultPattern()
 
-	f.TitleFits = func(title string) bool {
-		return params.Title == title
+	if _, ok := c.GetQuery("title"); ok {
+		f.TitleFits = func(title string) bool {
+			return params.Title == title
+		}
 	}
-	f.CreatedFits = func(created time.Time) bool {
-		pY, pM, pD := params.Created.UTC().Date()
-		y, m, d := created.UTC().Date()
-		return y == pY && m == pM && d == pD
+
+	if _, ok := c.GetQuery("created"); ok {
+		f.CreatedFits = func(created time.Time) bool {
+			pY, pM, pD := params.Created.UTC().Date()
+			y, m, d := created.UTC().Date()
+			return y == pY && m == pM && d == pD
+		}
 	}
+
 	if v, ok := c.GetQuery("user_id"); ok {
 		id, err := strconv.Atoi(v)
 		if err != nil {
@@ -313,6 +329,7 @@ func createAdPattern(c *gin.Context, params listAdsRequest) (*ads.Pattern, error
 			return int64(id) == userID
 		}
 	}
+
 	if v, ok := c.GetQuery("published"); ok {
 		p, err := strconv.ParseBool(v)
 		if err != nil {

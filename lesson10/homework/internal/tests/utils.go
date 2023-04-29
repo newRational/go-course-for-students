@@ -73,7 +73,7 @@ func newSimpleHTTPServer(port string, a app.App) *http.Server {
 }
 
 func getTestHTTPClient() *testHTTPClient {
-	server := newSimpleHTTPServer(":18080", app.NewApp(adrepo.New(), userrepo.New()))
+	server := httpgin.NewHTTPServer(":18080", app.NewApp(adrepo.New(), userrepo.New()))
 	testServer := httptest.NewServer(server.Handler)
 
 	return &testHTTPClient{
