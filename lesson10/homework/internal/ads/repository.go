@@ -1,8 +1,6 @@
 package ads
 
-import (
-	"context"
-)
+import "context"
 
 //go:generate mockery --name Repository
 type Repository interface {

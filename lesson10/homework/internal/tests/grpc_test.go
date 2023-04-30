@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
 	"homework10/internal/adapters/adrepo"

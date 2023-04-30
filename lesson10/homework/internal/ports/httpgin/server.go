@@ -1,9 +1,9 @@
 package httpgin
 
 import (
-	"github.com/gin-contrib/cors"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"homework10/internal/app"

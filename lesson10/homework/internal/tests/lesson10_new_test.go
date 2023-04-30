@@ -2,17 +2,19 @@ package tests
 
 import (
 	"context"
+	"log"
+	"net"
+	"testing"
+
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+
 	"homework10/internal/adapters/adrepo"
 	"homework10/internal/adapters/userrepo"
 	"homework10/internal/app"
 	grpcPort "homework10/internal/ports/grpc"
-	"log"
-	"net"
-	"testing"
 )
 
 func FuzzCreateUserHTTP(f *testing.F) {
