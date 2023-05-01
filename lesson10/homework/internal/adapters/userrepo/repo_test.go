@@ -33,10 +33,11 @@ func (s *RepoTestSuite) TestAddUser() {
 		user *users.User
 	}
 	tests := []struct {
-		name string
-		args args
-		want int64
-		err  error
+		name    string
+		args    args
+		want    int64
+		wantErr bool
+		err     error
 	}{
 		{
 			name: "ok add 5th user",
@@ -48,8 +49,8 @@ func (s *RepoTestSuite) TestAddUser() {
 					Email:    "user5@gmail.com",
 				},
 			},
-			want: 5,
-			err:  nil,
+			want:    5,
+			wantErr: false,
 		},
 		{
 			name: "ok add 6th user",
@@ -61,8 +62,8 @@ func (s *RepoTestSuite) TestAddUser() {
 					Email:    "user6@gmail.com",
 				},
 			},
-			want: 6,
-			err:  nil,
+			want:    6,
+			wantErr: false,
 		},
 		{
 			name: "wrong add 7th user (given ID=0)",
@@ -74,18 +75,20 @@ func (s *RepoTestSuite) TestAddUser() {
 					Email:    "user7@gmail.com",
 				},
 			},
-			want: -1,
-			err:  ErrUserAlreadyExists,
+			want:    -1,
+			wantErr: true,
+			err:     ErrUserAlreadyExists,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
 			ID, err := s.repo.AddUser(tt.args.ctx, tt.args.user)
-			if err != nil {
+			if tt.wantErr {
 				assert.ErrorIs(t, err, ErrUserAlreadyExists)
 				assert.Equal(t, int64(-1), ID)
 			} else {
+				assert.NoError(t, err)
 				assert.Equal(t, tt.want, ID)
 			}
 		})
@@ -98,10 +101,11 @@ func (s *RepoTestSuite) TestUserByID() {
 		ID  int64
 	}
 	tests := []struct {
-		name string
-		args args
-		want *users.User
-		err  error
+		name    string
+		args    args
+		want    *users.User
+		wantErr bool
+		err     error
 	}{
 		{
 			name: "ok get user by ID=0",
@@ -114,7 +118,7 @@ func (s *RepoTestSuite) TestUserByID() {
 				Nickname: "user0",
 				Email:    "user0@gmail.com",
 			},
-			err: nil,
+			wantErr: false,
 		},
 		{
 			name: "ok get user by ID=3",
@@ -127,7 +131,7 @@ func (s *RepoTestSuite) TestUserByID() {
 				Nickname: "user3",
 				Email:    "user3@gmail.com",
 			},
-			err: nil,
+			wantErr: false,
 		},
 		{
 			name: "ok get user by ID=4",
@@ -140,7 +144,7 @@ func (s *RepoTestSuite) TestUserByID() {
 				Nickname: "user4",
 				Email:    "user4@gmail.com",
 			},
-			err: nil,
+			wantErr: false,
 		},
 		{
 			name: "wrong get user by ID=5",
@@ -148,18 +152,20 @@ func (s *RepoTestSuite) TestUserByID() {
 				ctx: context.Background(),
 				ID:  5,
 			},
-			want: nil,
-			err:  ErrNoUser,
+			want:    nil,
+			wantErr: true,
+			err:     ErrNoUser,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
 			u, err := s.repo.UserByID(tt.args.ctx, tt.args.ID)
-			if err != nil {
+			if tt.wantErr {
 				assert.ErrorIs(t, err, ErrNoUser)
 				assert.Nil(t, u)
 			} else {
+				assert.NoError(t, err)
 				assert.Equal(t, tt.want.ID, u.ID)
 				assert.Equal(t, tt.want.Nickname, u.Nickname)
 				assert.Equal(t, tt.want.Email, u.Email)
@@ -174,9 +180,10 @@ func (s *RepoTestSuite) TestDeleteUser() {
 		ID  int64
 	}
 	tests := []struct {
-		name string
-		args args
-		err  error
+		name    string
+		args    args
+		wantErr bool
+		err     error
 	}{
 		{
 			name: "ok delete user by ID=0",
@@ -184,7 +191,7 @@ func (s *RepoTestSuite) TestDeleteUser() {
 				ctx: context.Background(),
 				ID:  0,
 			},
-			err: nil,
+			wantErr: false,
 		},
 		{
 			name: "ok delete user by ID=3",
@@ -192,15 +199,16 @@ func (s *RepoTestSuite) TestDeleteUser() {
 				ctx: context.Background(),
 				ID:  3,
 			},
-			err: nil,
+			wantErr: false,
 		},
 		{
-			name: "wrong delete user by ID=4",
+			name: "wrong delete user by ID=5",
 			args: args{
 				ctx: context.Background(),
-				ID:  4,
+				ID:  5,
 			},
-			err: ErrNoUser,
+			wantErr: true,
+			err:     ErrNoUser,
 		},
 		{
 			name: "wrong delete user ID=10",
@@ -208,16 +216,18 @@ func (s *RepoTestSuite) TestDeleteUser() {
 				ctx: context.Background(),
 				ID:  10,
 			},
-			err: ErrNoUser,
+			wantErr: true,
+			err:     ErrNoUser,
 		},
 	}
 
 	for _, tt := range tests {
 		s.T().Run(tt.name, func(t *testing.T) {
 			err := s.repo.DeleteUser(tt.args.ctx, tt.args.ID)
-			if err != nil {
+			if tt.wantErr {
 				assert.ErrorIs(t, err, ErrNoUser)
 			} else {
+				assert.NoError(t, err)
 				_, err = s.repo.UserByID(context.Background(), tt.args.ID)
 				assert.ErrorIs(t, err, ErrNoUser)
 			}
